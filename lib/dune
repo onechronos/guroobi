@@ -1,0 +1,10 @@
+(library
+  (name gurobi)
+  (public_name gurobi)
+  (foreign_stubs
+    (language c)
+    (names gurobi_stubs)
+    (include_dirs "%{env:GUROBI_ROOT=/path/to/gurobi}/include")
+  )
+  (c_library_flags "-L %{env:GUROBI_ROOT=/path/to/gurobi}/lib" -lgurobi100)
+)
