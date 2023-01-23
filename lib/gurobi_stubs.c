@@ -20,15 +20,15 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#define gurobi_val(v) (*((GRBenv **) Data_custom_val(v)))
+#define env_val(v) (*((GRBenv **) Data_custom_val(v)))
 
-void gu_finalize(value v_gurobi) {
-  GRBenv* gurobi = gurobi_val( v_gurobi );
-  GRBfreeenv( gurobi );
+void gu_finalize(value v_env) {
+  GRBenv* env = env_val( v_env );
+  GRBfreeenv( env );
 }
 
-static struct custom_operations gurobi_ops = {
-  "gurobi",
+static struct custom_operations env_ops = {
+  "gurobi.env",
   gu_finalize,
   custom_compare_default,
   custom_hash_default,
@@ -47,17 +47,17 @@ static struct custom_operations gurobi_ops = {
 CAMLprim value gu_empty_env( value unit )
 {
   CAMLparam1( unit /* unused */ );
-  CAMLlocal2( v_res, v_gurobi );
+  CAMLlocal2( v_res, v_env );
 
-  GRBenv* gurobi = NULL;
-  int error = GRBemptyenv(&gurobi);
+  GRBenv* env = NULL;
+  int error = GRBemptyenv(&env);
   if ( error == 0 ) {
-    v_gurobi = caml_alloc_custom(&gurobi_ops, sizeof(void*), 0, 1);
-    gurobi_val(v_gurobi) = gurobi;
+    v_env = caml_alloc_custom(&env_ops, sizeof(void*), 0, 1);
+    env_val(v_env) = env;
 
     // Ok t
     v_res = caml_alloc(1, 0);
-    Store_field( v_res, 0, v_gurobi );
+    Store_field( v_res, 0, v_env );
   }
   else {
     // Error code
@@ -68,21 +68,21 @@ CAMLprim value gu_empty_env( value unit )
 }
   
 // set and get integer parameters
-CAMLprim value gu_set_int_param( value v_gurobi, value v_name, value v_i )
+CAMLprim value gu_set_int_param( value v_env, value v_name, value v_i )
 {
-  CAMLparam3( v_gurobi, v_name, v_i );
-  GRBenv* gurobi = gurobi_val(v_gurobi);
+  CAMLparam3( v_env, v_name, v_i );
+  GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
   int i = Int_val(v_i);
-  int error = GRBsetintparam( gurobi, name, i );
+  int error = GRBsetintparam( env, name, i );
   CAMLreturn( Val_int( error ) );
 }
 
-CAMLprim value gu_get_int_param( value v_gurobi, value v_name )
+CAMLprim value gu_get_int_param( value v_env, value v_name )
 {
-  CAMLparam2( v_gurobi, v_name );
+  CAMLparam2( v_env, v_name );
   CAMLlocal1( v_res );
-  GRBenv* gurobi = gurobi_val(v_gurobi);
+  GRBenv* gurobi = env_val(v_env);
   const char* name = String_val(v_name);
   int i;
   int error = GRBgetintparam( gurobi, name, &i );
@@ -100,24 +100,24 @@ CAMLprim value gu_get_int_param( value v_gurobi, value v_name )
 }
   
 // set and get string parameters 
-CAMLprim value gu_set_str_param( value v_gurobi, value v_name, value v_i )
+CAMLprim value gu_set_str_param( value v_env, value v_name, value v_i )
 {
-  CAMLparam3( v_gurobi, v_name, v_i );
-  GRBenv* gurobi = gurobi_val(v_gurobi);
+  CAMLparam3( v_env, v_name, v_i );
+  GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
   const char* s = String_val(v_i);
-  int error = GRBsetstrparam( gurobi, name, s );
+  int error = GRBsetstrparam( env, name, s );
   CAMLreturn( Val_int( error ) );
 }
 
-CAMLprim value gu_get_str_param( value v_gurobi, value v_name )
+CAMLprim value gu_get_str_param( value v_env, value v_name )
 {
-  CAMLparam2( v_gurobi, v_name );
+  CAMLparam2( v_env, v_name );
   CAMLlocal2( v_res, v_s );
-  GRBenv* gurobi = gurobi_val(v_gurobi);
+  GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
   char s[GRB_MAX_STRLEN];
-  int error = GRBgetstrparam( gurobi, name, s );
+  int error = GRBgetstrparam( env, name, s );
   if ( error == 0 ) {
     v_s = caml_copy_string( s );
 
@@ -134,24 +134,24 @@ CAMLprim value gu_get_str_param( value v_gurobi, value v_name )
 }
 
 // set and get floating-point  parameters
-CAMLprim value gu_set_float_param( value v_gurobi, value v_name, value v_f )
+CAMLprim value gu_set_float_param( value v_env, value v_name, value v_f )
 {
-  CAMLparam3( v_gurobi, v_name, v_f );
-  GRBenv* gurobi = gurobi_val(v_gurobi);
+  CAMLparam3( v_env, v_name, v_f );
+  GRBenv* gurobi = env_val(v_env);
   const char* name = String_val(v_name);
   double f = Double_val(v_f);
   int error = GRBsetdblparam( gurobi, name, f );
   CAMLreturn( Val_int( error ) );
 }
 
-CAMLprim value gu_get_float_param( value v_gurobi, value v_name )
+CAMLprim value gu_get_float_param( value v_env, value v_name )
 {
-  CAMLparam2( v_gurobi, v_name );
+  CAMLparam2( v_env, v_name );
   CAMLlocal2( v_res, v_f );
-  GRBenv* gurobi = gurobi_val(v_gurobi);
+  GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
   double f;
-  int error = GRBgetdblparam( gurobi, name, &f );
+  int error = GRBgetdblparam( env, name, &f );
   if ( error == 0 ) {
     v_f = caml_copy_double(f);
     // Ok f
@@ -165,3 +165,4 @@ CAMLprim value gu_get_float_param( value v_gurobi, value v_name )
   }
   CAMLreturn( v_res );
 }
+
