@@ -1,12 +1,60 @@
-type t
+open Bigarray
 
-external empty_env : unit -> (t, int) result = "gu_empty_env"
+type fa = (float, float64_elt, c_layout) Array1.t
+type ca = (char, int8_unsigned_elt, c_layout) Array1.t
+type i32a = (int32, int32_elt, c_layout) Array1.t
+type env
 
-external set_int_param : t -> string -> int -> int = "gu_set_int_param"
-external get_int_param : t -> string -> (int, int) result = "gu_get_int_param"
+external empty_env : unit -> (env, int) result = "gu_empty_env"
+external set_int_param : env -> string -> int32 -> int = "gu_set_int_param"
 
-external set_str_param : t -> string -> string -> int = "gu_set_str_param"
-external get_str_param : t -> string -> (string, int) result = "gu_get_str_param"
+external get_int_param : env -> string -> (int32, int) result
+  = "gu_get_int_param"
 
-external set_float_param : t -> string -> float -> int = "gu_set_float_param"
-external get_float_param : t -> string -> (float, int) result = "gu_get_float_param"
+external set_str_param : env -> string -> string -> int = "gu_set_str_param"
+
+external get_str_param : env -> string -> (string, int) result
+  = "gu_get_str_param"
+
+external set_float_param : env -> string -> float -> int = "gu_set_float_param"
+
+external get_float_param : env -> string -> (float, int) result
+  = "gu_get_float_param"
+
+external start_env : env -> int = "gu_start_env"
+
+type model
+
+external new_model :
+  env ->
+  string ->
+  int ->
+  fa option ->
+  fa option ->
+  fa option ->
+  ca option ->
+  string array option ->
+  (model, int) result = "gu_new_model_bc" "gu_new_model"
+
+external set_float_attr_element : model -> string -> int -> float -> int
+  = "gu_set_float_attr_element"
+
+external set_str_attr_element : model -> string -> int -> string -> int
+  = "gu_set_str_attr_element"
+
+external set_int_attr_element : model -> string -> int -> int -> int
+  = "gu_set_int_attr_element"
+
+external set_float_attr : model -> string -> float -> int = "gu_set_float_attr"
+external set_str_attr : model -> string -> string -> int = "gu_set_str_attr"
+external set_int_attr : model -> string -> int -> int = "gu_set_int_attr"
+
+external add_constrs :
+  model -> int -> int -> i32a -> i32a -> fa -> ca -> fa -> int
+  = "gu_add_constrs_bc" "gu_add_constrs"
+
+external add_constr :
+  model -> int -> i32a -> fa -> char -> float -> string option -> int
+  = "gu_add_constr_bc" "gu_add_constr"
+
+external optimize : model -> int = "gu_optimize"

@@ -17,19 +17,62 @@
 
 /* standard C */
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
 
+/* corresponding to OCaml Bigarray type (float, float64_elt, c_layout) Array1.t */
+double* get_fa( value a, int n ) {
+  CAMLparam1( a );
+  assert( Caml_ba_array_val(a)->num_dims == 1 );
+  assert( Caml_ba_array_val(a)->dim[0] == n );
+  assert( (Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_FLOAT64 );
+  return Caml_ba_data_val(a);
+}
+
+/* corresponding to OCaml Bigarray type (int, int32_elt, c_layout) Array1.t */
+int* get_i32a( value a, int n ) {
+  CAMLparam1( a );
+  assert( Caml_ba_array_val(a)->num_dims == 1 );
+  assert( Caml_ba_array_val(a)->dim[0] == n );
+  assert( (Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_INT32 );
+  return Caml_ba_data_val(a);
+}
+
+/* corresponding to OCaml Bigarray type (char, int8_unsigned_elt, c_layout) Array1.t */
+char* get_ca( value a, int n ) {
+  CAMLparam1( a );
+  assert( Caml_ba_array_val(a)->num_dims == 1 );
+  assert( Caml_ba_array_val(a)->dim[0] == n );
+  assert( (Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_CHAR );
+  return Caml_ba_data_val(a);
+}
+
+// from a value representing an OCaml array of strings, return a
+// heap-allocated C array of null-terminated C-strings.
+const char** get_sa( value v_sa, int n )
+{
+  CAMLparam1( v_sa );
+  CAMLlocal1( v_i );
+  const char** sa = malloc( sizeof(char*) * n );
+  for (int i = 0; i < n; i++ ) {
+    v_i = Field( sa, i );
+    sa[i] = String_val( v_i );
+  }
+  return sa;
+}
+
 #define env_val(v) (*((GRBenv **) Data_custom_val(v)))
 
-void gu_finalize(value v_env) {
+void gu_env_finalize(value v_env)
+{
   GRBenv* env = env_val( v_env );
   GRBfreeenv( env );
 }
 
 static struct custom_operations env_ops = {
   "gurobi.env",
-  gu_finalize,
+  gu_env_finalize,
   custom_compare_default,
   custom_hash_default,
   custom_serialize_default,
@@ -37,6 +80,26 @@ static struct custom_operations env_ops = {
   custom_compare_ext_default,
   custom_fixed_length_default
 };
+
+#define model_val(v) (*((GRBmodel **) Data_custom_val(v)))
+
+void gu_model_finalize(value v_model) 
+{
+  GRBmodel* model = model_val( v_model );
+  GRBfreemodel( model );
+}
+
+static struct custom_operations model_ops = {
+  "gurobi.model",
+  gu_model_finalize,
+  custom_compare_default,
+  custom_hash_default,
+  custom_serialize_default,
+  custom_deserialize_default,
+  custom_compare_ext_default,
+  custom_fixed_length_default
+};
+
 
 // naming convention: Gurobi's functions consist of multiple words,
 // concatenated without a space, resulting in unfortunate
@@ -67,13 +130,22 @@ CAMLprim value gu_empty_env( value unit )
   CAMLreturn( v_res );
 }
   
+// start environment
+CAMLprim value gu_start_env( value v_env )
+{
+  CAMLparam1( v_env );
+  GRBenv* env = env_val(v_env);
+  int error = GRBstartenv( env );
+  CAMLreturn( Val_int( error ) );
+}
+
 // set and get integer parameters
 CAMLprim value gu_set_int_param( value v_env, value v_name, value v_i )
 {
   CAMLparam3( v_env, v_name, v_i );
   GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
-  int i = Int_val(v_i);
+  int i = Int32_val(v_i);
   int error = GRBsetintparam( env, name, i );
   CAMLreturn( Val_int( error ) );
 }
@@ -89,7 +161,7 @@ CAMLprim value gu_get_int_param( value v_env, value v_name )
   if ( error == 0 ) {
     // Ok i
     v_res = caml_alloc(1, 0);
-    Store_field( v_res, 0, Val_int(i) );
+    Store_field( v_res, 0, caml_copy_int32(i) );
   }
   else {
     // Error code
@@ -166,3 +238,258 @@ CAMLprim value gu_get_float_param( value v_env, value v_name )
   CAMLreturn( v_res );
 }
 
+// create a new model
+CAMLprim value gu_new_model(
+ value v_env,
+ value v_name,
+ value v_num_vars,
+ value v_objective,
+ value v_lower_bound,
+ value v_upper_bound,
+ value v_var_type,
+ value v_var_names
+)
+
+{
+  CAMLparam5( v_env, v_name, v_num_vars, v_objective, v_lower_bound );
+  CAMLxparam2( v_upper_bound, v_var_type );
+  CAMLlocal2( v_model, v_res );
+  GRBenv* env = env_val( v_env );
+  const char* name = String_val( v_name );
+  int num_vars = Int_val( v_num_vars );
+
+  // objective
+  double* objective = NULL;
+  if ( Is_some( v_objective ) ) {
+    objective = get_fa( v_objective, num_vars );
+  }
+
+  // lower_bound
+  double* lower_bound = NULL;
+  if ( Is_some( v_lower_bound ) ) {
+    lower_bound = get_fa( v_lower_bound, num_vars );
+  }
+
+  // upper bound
+  double* upper_bound = NULL;
+  if ( Is_some( v_upper_bound ) ) {
+    upper_bound = get_fa( v_upper_bound, num_vars );
+  }
+
+  char* var_type = NULL;
+  if ( Is_some( v_var_type ) ) {
+    var_type = get_ca( v_var_type, num_vars );
+  }
+
+  const char** var_names = NULL;
+  if ( Is_some( v_var_names ) ) {
+    var_names = get_sa( v_var_names, num_vars );
+  }
+
+  GRBmodel* model;
+
+  // Note: we are not supporting variable names, the last argument
+  int error = GRBnewmodel( env,
+			   &model,
+			   name,
+			   num_vars,
+			   objective,
+			   lower_bound,
+			   upper_bound,
+			   var_type,
+			   (char**)var_names );
+  
+  if ( Is_some( v_var_names ) ) {
+    free( var_names );
+  }
+
+  if ( error == 0 ) {
+    v_model = caml_alloc_custom(&model_ops, sizeof(void*), 0, 1);
+    model_val(v_model) = model;
+
+    // Ok model
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_model );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
+
+// create a new model (bytecode support)
+CAMLprim value gu_new_model_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 8 );
+  return gu_new_model( v_args[0],
+		       v_args[1],
+		       v_args[2],
+		       v_args[3],
+		       v_args[4],
+		       v_args[5],
+		       v_args[6],
+		       v_args[7]
+		     );
+}
+
+// set a float attribute in an implicit array of such attributes
+CAMLprim value gu_set_float_attr_element(value v_model, value v_name, value v_element, value v_new_value )
+{
+  CAMLparam4( v_model, v_name, v_element, v_new_value );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int element = Int_val(v_element);
+  double new_value = Double_val(v_new_value);
+  int error = GRBsetdblattrelement( model, name, element, new_value );
+  CAMLreturn( Val_int( error ) );
+}
+
+// set a string attribute in an implicit array of such attributes
+CAMLprim value gu_set_str_attr_element(value v_model, value v_name, value v_element, value v_new_value )
+{
+  CAMLparam4( v_model, v_name, v_element, v_new_value );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int element = Int_val(v_element);
+  const char* new_value = String_val(v_new_value);
+  int error = GRBsetstrattrelement( model, name, element, new_value );
+  CAMLreturn( Val_int( error ) );
+}
+
+// set an int attribute in an implict array of such attributes
+CAMLprim value gu_set_int_attr_element(value v_model, value v_name, value v_element, value v_new_value )
+{
+  CAMLparam4( v_model, v_name, v_element, v_new_value );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int element = Int_val(v_element);
+  int new_value = Int_val(v_new_value);
+  int error = GRBsetintattrelement( model, name, element, new_value );
+  CAMLreturn( Val_int( error ) );
+}
+
+// set a float attribute
+CAMLprim value gu_set_float_attr(value v_model, value v_name, value v_new_value )
+{
+  CAMLparam3( v_model, v_name, v_new_value );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  double new_value = Double_val(v_new_value);
+  int error = GRBsetdblattr( model, name, new_value );
+  CAMLreturn( Val_int( error ) );
+}
+
+// set a string attribute
+CAMLprim value gu_set_str_attr(value v_model, value v_name, value v_new_value )
+{
+  CAMLparam3( v_model, v_name, v_new_value );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  const char* new_value = String_val(v_new_value);
+  int error = GRBsetstrattr( model, name, new_value );
+  CAMLreturn( Val_int( error ) );
+}
+
+// set an int attribute
+CAMLprim value gu_set_int_attr(value v_model, value v_name, value v_new_value )
+{
+  CAMLparam3( v_model, v_name, v_new_value );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int new_value = Int_val(v_new_value);
+  int error = GRBsetintattr( model, name, new_value );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_constrs(
+ value v_model,
+ value v_num_constraints,
+ value v_num_nz,
+ value v_c_beg,
+ value v_c_ind,
+ value v_c_val,
+ value v_sense,
+ value v_rhs
+ /*,  value constr_names */
+)
+{
+  CAMLparam5( v_model, v_num_constraints, v_num_nz, v_c_beg, v_c_ind );
+  CAMLxparam3( v_c_val, v_sense, v_rhs );
+  GRBmodel* model = model_val( v_model );
+  int num_constraints = Int_val( v_num_constraints );
+  int num_nz = Int_val( v_num_nz );
+  int* c_beg = get_i32a( v_c_beg, num_constraints );
+  int* c_ind = get_i32a( v_c_ind, num_nz );
+  double* c_val = get_fa( v_c_val, num_nz );
+  char* sense = get_ca( v_sense, num_constraints );
+  double* rhs = get_fa( v_rhs, num_constraints );
+
+  // note: currently we disable constraint names
+  int error = GRBaddconstrs( model, num_constraints, num_nz, c_beg, c_ind, c_val, sense, rhs, NULL );
+  CAMLreturn( Val_int( error ) );
+}
+  
+
+CAMLprim value gu_add_constrs_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 8 );
+  return gu_add_constrs( v_args[0],
+		         v_args[1],
+  		         v_args[2],
+		         v_args[3],
+		         v_args[4],
+		         v_args[5],
+		         v_args[6],
+		         v_args[7]
+			 );
+}  
+
+CAMLprim value gu_add_constr(
+ value v_model,
+ value v_num_nz,
+ value v_c_ind,
+ value v_c_val,
+ value v_sense,
+ value v_rhs,
+ value v_name
+)
+{
+  CAMLparam5( v_model, v_num_nz, v_c_ind, v_c_val, v_sense );
+  CAMLxparam2( v_rhs, v_name );
+  GRBmodel* model = model_val( v_model );
+  int num_nz = Int_val( v_num_nz );
+  int* c_ind = get_i32a( v_c_ind, num_nz );
+  double* c_val = get_fa( v_c_val, num_nz );
+  char sense = Int_val( v_sense );
+  double rhs = Double_val( v_rhs );
+  const char* name = NULL;
+  if (Is_some( v_name )) {
+    name = String_val( v_name );
+  }
+  int error = GRBaddconstr( model, num_nz, c_ind, c_val, sense, rhs, name );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_constr_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 7 );
+  return gu_add_constr( v_args[0],
+		        v_args[1],
+  		        v_args[2],
+		        v_args[3],
+		        v_args[4],
+		        v_args[5],
+		        v_args[6]
+		      );
+}  
+
+CAMLprim value gu_optimize( value v_model )
+{
+  CAMLparam1( v_model );
+  GRBmodel* model = model_val( v_model );
+  int error = GRBoptimize( model );
+  CAMLreturn( Val_int( error ) );
+}

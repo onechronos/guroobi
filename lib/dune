@@ -1,6 +1,7 @@
 (library
   (name gurobi)
   (public_name gurobi)
+  (libraries yojson)
   (foreign_stubs
     (language c)
     (names gurobi_stubs)
