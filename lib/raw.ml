@@ -65,8 +65,16 @@ external set_int_attr : model -> string -> int -> int = "gu_set_int_attr"
 external get_int_attr : model -> string -> (int, int) result = "gu_get_int_attr"
 
 external add_constrs :
-  model -> int -> int -> i32a -> i32a -> fa -> ca -> fa -> int
-  = "gu_add_constrs_bc" "gu_add_constrs"
+  model ->
+  int ->
+  int ->
+  i32a ->
+  i32a ->
+  fa ->
+  ca ->
+  fa ->
+  string array option ->
+  int = "gu_add_constrs_bc" "gu_add_constrs"
 
 external add_constr :
   model -> int -> i32a -> fa -> char -> float -> string option -> int

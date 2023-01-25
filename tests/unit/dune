@@ -1,1 +1,1 @@
-(test (name diet) (libraries gurobi))
+(test (name diet) (libraries gurobi unix))

@@ -34,11 +34,28 @@ let print_solution model n_categories n_foods =
       | Ok obj ->
         pr "Cost: %f\n\nBuy:\n" obj;
         for j = 0 to n_foods - 1 do
-          pr_name_and_value model j
+          match get_float_attr_element model "X" j with
+          | Error code ->
+            pr "get x[%d] failed with code=%d\n%!" j code;
+            exit 1
+          | Ok x_j -> (
+            if x_j > 0.0001 then
+              match get_str_attr_element model "VarName" j with
+              | Error code ->
+                pr "get varname[%d] failed with code=%d\n%!" j code
+              | Ok var_name -> pr "%s %f\n" var_name x_j)
         done;
         pr "\nNutrition:\n";
         for j = 0 to n_categories - 1 do
-          pr_name_and_value model (n_foods + j)
+          let i = n_foods + j in
+          match get_float_attr_element model "X" i with
+          | Error code ->
+            pr "get x[%d] failed with code=%d\n%!" i code;
+            exit 1
+          | Ok x_i -> (
+            match get_str_attr_element model "VarName" i with
+            | Error code -> pr "get varname[%d] failed with code=%d\n%!" i code
+            | Ok var_name -> pr "%s %f\n" var_name x_i)
         done)
     else print_endline "no solution"
 
@@ -121,7 +138,8 @@ let main key_path =
 
     for j = 0 to n_categories - 1 do
       az (set_float_attr_element model "LB" (j + n_foods) min_nutrition.(j));
-      az (set_float_attr_element model "UB" (j + n_foods) max_nutrition.(j))
+      az (set_float_attr_element model "UB" (j + n_foods) max_nutrition.(j));
+      az (set_str_attr_element model "VarName" (j + n_foods) categories.(j))
     done;
 
     (* nutrition constraints *)
@@ -148,7 +166,9 @@ let main key_path =
       incr idx
     done;
 
-    az (add_constrs model n_categories !idx c_beg c_ind c_val sense rhs);
+    az
+      (add_constrs model n_categories !idx c_beg c_ind c_val sense rhs
+         (Some categories));
     az (optimize model);
     let num_nz = 2 in
     let c_ind = i32a num_nz in
@@ -167,5 +187,10 @@ let main key_path =
     print_solution model n_categories n_foods
 
 let _ =
-  let key_path = Sys.argv.(1) in
-  main key_path
+  let key_path_env_var = "GUROBI_ISV_KEY_PATH" in
+  try
+    let key_path = Unix.getenv key_path_env_var in
+    main key_path
+  with Not_found ->
+    pr "environment variable %S not found\n%!" key_path_env_var;
+    exit 1
