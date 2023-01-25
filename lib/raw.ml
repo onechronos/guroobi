@@ -6,11 +6,8 @@ type i32a = (int32, int32_elt, c_layout) Array1.t
 type env
 
 external empty_env : unit -> (env, int) result = "gu_empty_env"
-external set_int_param : env -> string -> int32 -> int = "gu_set_int_param"
-
-external get_int_param : env -> string -> (int32, int) result
-  = "gu_get_int_param"
-
+external set_int_param : env -> string -> int -> int = "gu_set_int_param"
+external get_int_param : env -> string -> (int, int) result = "gu_get_int_param"
 external set_str_param : env -> string -> string -> int = "gu_set_str_param"
 
 external get_str_param : env -> string -> (string, int) result
@@ -39,15 +36,33 @@ external new_model :
 external set_float_attr_element : model -> string -> int -> float -> int
   = "gu_set_float_attr_element"
 
+external get_float_attr_element : model -> string -> int -> (float, int) result
+  = "gu_get_float_attr_element"
+
 external set_str_attr_element : model -> string -> int -> string -> int
   = "gu_set_str_attr_element"
+
+external get_str_attr_element : model -> string -> int -> (string, int) result
+  = "gu_get_str_attr_element"
 
 external set_int_attr_element : model -> string -> int -> int -> int
   = "gu_set_int_attr_element"
 
+external get_int_attr_element : model -> string -> int -> (int, int) result
+  = "gu_get_int_attr_element"
+
 external set_float_attr : model -> string -> float -> int = "gu_set_float_attr"
+
+external get_float_attr : model -> string -> (float, int) result
+  = "gu_get_float_attr"
+
 external set_str_attr : model -> string -> string -> int = "gu_set_str_attr"
+
+external get_str_attr : model -> string -> (string, int) result
+  = "gu_get_str_attr"
+
 external set_int_attr : model -> string -> int -> int = "gu_set_int_attr"
+external get_int_attr : model -> string -> (int, int) result = "gu_get_int_attr"
 
 external add_constrs :
   model -> int -> int -> i32a -> i32a -> fa -> ca -> fa -> int

@@ -9,14 +9,45 @@ let i32a n = Array1.create int32 c_layout n
 let inf = 1e100
 let az v = assert (v = 0)
 
+let pr_name_and_value model j =
+  match get_float_attr_element model "X" j with
+  | Error code ->
+    pr "get x[%d] failed with code=%d\n%!" j code;
+    exit 1
+  | Ok x_j -> (
+    if x_j > 0.0001 then
+      match get_str_attr_element model "VarName" j with
+      | Error code -> pr "get varname[%d] failed with code=%d\n%!" j code
+      | Ok var_name -> pr "%s %f\n" var_name x_j)
+
+let print_solution model n_categories n_foods =
+  match get_int_attr model "Status" with
+  | Error code ->
+    pr "get status failed with code=%d\n%!" code;
+    exit 1
+  | Ok status ->
+    if status = 2 (* TODO *) then (
+      match get_float_attr model "ObjVal" with
+      | Error code ->
+        pr "get objval failed with code=%d\n%!" code;
+        exit 1
+      | Ok obj ->
+        pr "Cost: %f\n\nBuy:\n" obj;
+        for j = 0 to n_foods - 1 do
+          pr_name_and_value model j
+        done;
+        pr "\nNutrition:\n";
+        for j = 0 to n_categories - 1 do
+          pr_name_and_value model (n_foods + j)
+        done)
+    else print_endline "no solution"
+
 let main key_path =
   match Key.get key_path with
   | Error msg ->
     print_endline msg;
     exit 1
   | Ok { Key.name; app_name; expiration; v } ->
-    print_endline "diet";
-
     let env =
       match empty_env () with
       | Error c ->
@@ -25,11 +56,11 @@ let main key_path =
       | Ok env -> env
     in
 
-    az (set_int_param env "OutputFlag" 1l);
+    az (set_int_param env "OutputFlag" 0);
 
     az (set_str_param env "GURO_PAR_ISVNAME" name);
     az (set_str_param env "GURO_PAR_ISVAPPNAME" app_name);
-    az (set_int_param env "GURO_PAR_ISVEXPIRATION" (Int32.of_int expiration));
+    az (set_int_param env "GURO_PAR_ISVEXPIRATION" expiration);
     az (set_str_param env "GURO_PAR_ISVKEY" v);
 
     az (start_env env);
@@ -82,6 +113,7 @@ let main key_path =
 
     az (set_int_attr model "ModelSense" 1 (* TODO *));
 
+    (* TODO *)
     for j = 0 to n_foods - 1 do
       az (set_float_attr_element model "Obj" j cost.(j));
       az (set_str_attr_element model "VarName" j foods.(j))
@@ -105,6 +137,7 @@ let main key_path =
       c_beg.{i} <- Int32.of_int !idx;
       rhs.{i} <- 0.0;
       sense.{i} <- '=';
+      (* TODO *)
       for j = 0 to n_foods - 1 do
         c_ind.{!idx} <- Int32.of_int j;
         c_val.{!idx} <- nutrition_values.(j).(i);
@@ -125,11 +158,13 @@ let main key_path =
     c_ind.{1} <- 8l;
     c_val.{1} <- 1.0;
 
-    az (add_constr model num_nz c_ind c_val '<' 6.0 (Some "limit_dairy"));
+    az
+      (add_constr model num_nz c_ind c_val '<' (* TODO *) 6.0
+         (Some "limit_dairy"));
+    print_solution model n_categories n_foods;
 
-    let err = optimize model in
-    ignore err;
-    ()
+    az (optimize model);
+    print_solution model n_categories n_foods
 
 let _ =
   let key_path = Sys.argv.(1) in
