@@ -6,7 +6,6 @@ let pr = Printf.printf
 let fa n = Array1.create float64 c_layout n
 let ca n = Array1.create char c_layout n
 let i32a n = Array1.create int32 c_layout n
-let inf = 1e100
 let az v = assert (v = 0)
 
 let pr_name_and_value model j =
@@ -85,7 +84,7 @@ let main key_path =
     let categories = [| "calories"; "protein"; "fat"; "sodium" |] in
     let n_categories = Array.length categories in
     let min_nutrition = [| 1800.; 91.; 0.; 0. |] in
-    let max_nutrition = [| 2200.; inf; 65.; 1779. |] in
+    let max_nutrition = [| 2200.; GRB.infinity; 65.; 1779. |] in
 
     let foods =
       [|
