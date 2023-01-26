@@ -170,9 +170,9 @@ let main key_path =
       incr idx
     done;
 
-    az
-      (add_constrs model n_categories !idx c_beg c_ind c_val sense rhs
-         (Some categories));
+    let csc = { num_nz = !idx; xbeg = c_beg; xind = c_ind; xval = c_val } in
+
+    az (add_constrs model n_categories (Some csc) sense rhs (Some categories));
     az (optimize model);
     let num_nz = 2 in
     let c_ind = i32a num_nz in

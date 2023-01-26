@@ -64,20 +64,31 @@ external get_str_attr : model -> string -> (string, int) result
 external set_int_attr : model -> string -> int -> int = "gu_set_int_attr"
 external get_int_attr : model -> string -> (int, int) result = "gu_get_int_attr"
 
+type compressed = {
+  num_nz : int;
+  xbeg : i32a;
+  xind : i32a;
+  xval : fa;
+}
+
 external add_constrs :
-  model ->
-  int ->
-  int ->
-  i32a ->
-  i32a ->
-  fa ->
-  ca ->
-  fa ->
-  string array option ->
-  int = "gu_add_constrs_bc" "gu_add_constrs"
+  model -> int -> compressed option -> ca -> fa -> string array option -> int
+  = "gu_add_constrs_bc" "gu_add_constrs"
 
 external add_constr :
   model -> int -> i32a -> fa -> char -> float -> string option -> int
   = "gu_add_constr_bc" "gu_add_constr"
 
+external add_vars :
+  model ->
+  int ->
+  compressed option ->
+  fa option ->
+  fa option ->
+  fa option ->
+  ca option ->
+  string array option ->
+  int = "gu_add_vars_bc" "gu_add_vars"
+
 external optimize : model -> int = "gu_optimize"
+external write : model -> string -> int = "gu_write"
