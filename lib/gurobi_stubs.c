@@ -244,17 +244,18 @@ CAMLprim value gu_new_model(
  value v_env,
  value v_name,
  value v_num_vars,
- value v_objective,
- value v_lower_bound,
- value v_upper_bound,
- value v_var_type,
+ value v_objective_opt,
+ value v_lower_bound_opt,
+ value v_upper_bound_opt,
+ value v_var_type_opt,
  value v_var_names_opt
 )
 
 {
-  CAMLparam5( v_env, v_name, v_num_vars, v_objective, v_lower_bound );
-  CAMLxparam3( v_upper_bound, v_var_type, v_var_names_opt );
-  CAMLlocal3( v_model, v_res, v_var_names );
+  CAMLparam5( v_env, v_name, v_num_vars, v_objective_opt, v_lower_bound_opt );
+  CAMLxparam3( v_upper_bound_opt, v_var_type_opt, v_var_names_opt );
+  CAMLlocal5( v_model, v_res, v_var_names, v_objective, v_lower_bound );
+  CAMLlocal2( v_upper_bound, v_var_type );
 
   GRBenv* env = env_val( v_env );
   const char* name = String_val( v_name );
@@ -262,27 +263,33 @@ CAMLprim value gu_new_model(
 
   // objective
   double* objective = NULL;
-  if ( Is_some( v_objective ) ) {
+  if ( Is_some( v_objective_opt ) ) {
+    v_objective = Some_val( v_objective_opt );
     objective = get_fa( v_objective, num_vars );
   }
 
-  // lower_bound
+  // lower bound
   double* lower_bound = NULL;
-  if ( Is_some( v_lower_bound ) ) {
+  if ( Is_some( v_lower_bound_opt ) ) {
+    v_lower_bound = Some_val( v_lower_bound_opt );
     lower_bound = get_fa( v_lower_bound, num_vars );
   }
 
   // upper bound
   double* upper_bound = NULL;
-  if ( Is_some( v_upper_bound ) ) {
+  if ( Is_some( v_upper_bound_opt ) ) {
+    v_upper_bound = Some_val( v_upper_bound_opt );
     upper_bound = get_fa( v_upper_bound, num_vars );
   }
 
+  // var type
   char* var_type = NULL;
-  if ( Is_some( v_var_type ) ) {
+  if ( Is_some( v_var_type_opt ) ) {
+    v_var_type = Some_val( v_var_type_opt );
     var_type = get_ca( v_var_type, num_vars );
   }
 
+  // var names
   const char** var_names = NULL;
   if ( Is_some( v_var_names_opt ) ) {
     v_var_names = Some_val( v_var_names_opt );
