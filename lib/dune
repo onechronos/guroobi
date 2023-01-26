@@ -9,3 +9,8 @@
   )
   (c_library_flags "-L %{env:GUROBI_ROOT=/path/to/gurobi}/lib" -lgurobi100)
 )
+
+(rule
+ (targets consts.ml)
+ (deps    (:gen ../gen/mkconsts.exe))
+ (action  (run %{gen} %{env:GUROBI_ROOT=/path/to/gurobi}/include/gurobi_c.h %{targets})))

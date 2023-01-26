@@ -26,7 +26,7 @@ let print_solution model n_categories n_foods =
     pr "get status failed with code=%d\n%!" code;
     exit 1
   | Ok status ->
-    if status = 2 (* TODO *) then (
+    if status = Consts.optimal then (
       match get_float_attr model "ObjVal" with
       | Error code ->
         pr "get objval failed with code=%d\n%!" code;
@@ -128,18 +128,23 @@ let main key_path =
       | Ok model -> model
     in
 
-    az (set_int_attr model "ModelSense" 1 (* TODO *));
+    az (set_int_attr model Consts.int_attr_modelsense Consts.minimize);
 
-    (* TODO *)
     for j = 0 to n_foods - 1 do
-      az (set_float_attr_element model "Obj" j cost.(j));
-      az (set_str_attr_element model "VarName" j foods.(j))
+      az (set_float_attr_element model Consts.dbl_attr_obj j cost.(j));
+      az (set_str_attr_element model Consts.str_attr_varname j foods.(j))
     done;
 
     for j = 0 to n_categories - 1 do
-      az (set_float_attr_element model "LB" (j + n_foods) min_nutrition.(j));
-      az (set_float_attr_element model "UB" (j + n_foods) max_nutrition.(j));
-      az (set_str_attr_element model "VarName" (j + n_foods) categories.(j))
+      az
+        (set_float_attr_element model Consts.dbl_attr_lb (j + n_foods)
+           min_nutrition.(j));
+      az
+        (set_float_attr_element model Consts.dbl_attr_ub (j + n_foods)
+           max_nutrition.(j));
+      az
+        (set_str_attr_element model Consts.str_attr_varname (j + n_foods)
+           categories.(j))
     done;
 
     (* nutrition constraints *)
@@ -154,8 +159,7 @@ let main key_path =
     for i = 0 to n_categories - 1 do
       c_beg.{i} <- Int32.of_int !idx;
       rhs.{i} <- 0.0;
-      sense.{i} <- '=';
-      (* TODO *)
+      sense.{i} <- Consts.equal;
       for j = 0 to n_foods - 1 do
         c_ind.{!idx} <- Int32.of_int j;
         c_val.{!idx} <- nutrition_values.(j).(i);
@@ -179,7 +183,7 @@ let main key_path =
     c_val.{1} <- 1.0;
 
     az
-      (add_constr model num_nz c_ind c_val '<' (* TODO *) 6.0
+      (add_constr model num_nz c_ind c_val Consts.less_equal 6.0
          (Some "limit_dairy"));
     print_solution model n_categories n_foods;
 
