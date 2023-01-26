@@ -11,6 +11,6 @@
 )
 
 (rule
- (targets consts.ml)
+ (targets gRB.ml)
  (deps    (:gen ../gen/mkconsts.exe))
  (action  (run %{gen} %{env:GUROBI_ROOT=/path/to/gurobi}/include/gurobi_c.h %{targets})))

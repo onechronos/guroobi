@@ -26,7 +26,7 @@ let print_solution model n_categories n_foods =
     pr "get status failed with code=%d\n%!" code;
     exit 1
   | Ok status ->
-    if status = Consts.optimal then (
+    if status = GRB.optimal then (
       match get_float_attr model "ObjVal" with
       | Error code ->
         pr "get objval failed with code=%d\n%!" code;
@@ -128,22 +128,22 @@ let main key_path =
       | Ok model -> model
     in
 
-    az (set_int_attr model Consts.int_attr_modelsense Consts.minimize);
+    az (set_int_attr model GRB.int_attr_modelsense GRB.minimize);
 
     for j = 0 to n_foods - 1 do
-      az (set_float_attr_element model Consts.dbl_attr_obj j cost.(j));
-      az (set_str_attr_element model Consts.str_attr_varname j foods.(j))
+      az (set_float_attr_element model GRB.dbl_attr_obj j cost.(j));
+      az (set_str_attr_element model GRB.str_attr_varname j foods.(j))
     done;
 
     for j = 0 to n_categories - 1 do
       az
-        (set_float_attr_element model Consts.dbl_attr_lb (j + n_foods)
+        (set_float_attr_element model GRB.dbl_attr_lb (j + n_foods)
            min_nutrition.(j));
       az
-        (set_float_attr_element model Consts.dbl_attr_ub (j + n_foods)
+        (set_float_attr_element model GRB.dbl_attr_ub (j + n_foods)
            max_nutrition.(j));
       az
-        (set_str_attr_element model Consts.str_attr_varname (j + n_foods)
+        (set_str_attr_element model GRB.str_attr_varname (j + n_foods)
            categories.(j))
     done;
 
@@ -159,7 +159,7 @@ let main key_path =
     for i = 0 to n_categories - 1 do
       c_beg.{i} <- Int32.of_int !idx;
       rhs.{i} <- 0.0;
-      sense.{i} <- Consts.equal;
+      sense.{i} <- GRB.equal;
       for j = 0 to n_foods - 1 do
         c_ind.{!idx} <- Int32.of_int j;
         c_val.{!idx} <- nutrition_values.(j).(i);
@@ -183,7 +183,7 @@ let main key_path =
     c_val.{1} <- 1.0;
 
     az
-      (add_constr model num_nz c_ind c_val Consts.less_equal 6.0
+      (add_constr model num_nz c_ind c_val GRB.less_equal 6.0
          (Some "limit_dairy"));
     print_solution model n_categories n_foods;
 
