@@ -9,37 +9,37 @@ let i32a n = Array1.create int32 c_layout n
 let az v = assert (v = 0)
 
 let pr_name_and_value model j =
-  match get_float_attr_element model "X" j with
+  match get_float_attr_element model GRB.dbl_attr_x j with
   | Error code ->
     pr "get x[%d] failed with code=%d\n%!" j code;
     exit 1
   | Ok x_j -> (
     if x_j > 0.0001 then
-      match get_str_attr_element model "VarName" j with
+      match get_str_attr_element model GRB.str_attr_varname j with
       | Error code -> pr "get varname[%d] failed with code=%d\n%!" j code
       | Ok var_name -> pr "%s %f\n" var_name x_j)
 
 let print_solution model n_categories n_foods =
-  match get_int_attr model "Status" with
+  match get_int_attr model GRB.int_attr_status with
   | Error code ->
     pr "get status failed with code=%d\n%!" code;
     exit 1
   | Ok status ->
     if status = GRB.optimal then (
-      match get_float_attr model "ObjVal" with
+      match get_float_attr model GRB.dbl_attr_objval with
       | Error code ->
         pr "get objval failed with code=%d\n%!" code;
         exit 1
       | Ok obj ->
         pr "Cost: %f\n\nBuy:\n" obj;
         for j = 0 to n_foods - 1 do
-          match get_float_attr_element model "X" j with
+          match get_float_attr_element model GRB.dbl_attr_x j with
           | Error code ->
             pr "get x[%d] failed with code=%d\n%!" j code;
             exit 1
           | Ok x_j -> (
             if x_j > 0.0001 then
-              match get_str_attr_element model "VarName" j with
+              match get_str_attr_element model GRB.str_attr_varname j with
               | Error code ->
                 pr "get varname[%d] failed with code=%d\n%!" j code
               | Ok var_name -> pr "%s %f\n" var_name x_j)
@@ -47,12 +47,12 @@ let print_solution model n_categories n_foods =
         pr "\nNutrition:\n";
         for j = 0 to n_categories - 1 do
           let i = n_foods + j in
-          match get_float_attr_element model "X" i with
+          match get_float_attr_element model GRB.dbl_attr_x i with
           | Error code ->
             pr "get x[%d] failed with code=%d\n%!" i code;
             exit 1
           | Ok x_i -> (
-            match get_str_attr_element model "VarName" i with
+            match get_str_attr_element model GRB.str_attr_varname i with
             | Error code -> pr "get varname[%d] failed with code=%d\n%!" i code
             | Ok var_name -> pr "%s %f\n" var_name x_i)
         done)
@@ -72,7 +72,7 @@ let main key_path =
       | Ok env -> env
     in
 
-    az (set_int_param env "OutputFlag" 0);
+    az (set_int_param env GRB.int_par_outputflag 0);
 
     az (set_str_param env "GURO_PAR_ISVNAME" name);
     az (set_str_param env "GURO_PAR_ISVAPPNAME" app_name);
