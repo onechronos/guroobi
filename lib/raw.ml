@@ -20,6 +20,11 @@ external get_float_param : env -> string -> (float, int) result
 
 external start_env : env -> int = "gu_start_env"
 
+(* note: all functions that take arrays or bigarrays as inputs may raise
+   [Invalid_argument err] as a result of array sizes that are inconsistent with
+   other inputs. Similarly, the exception will be raised when the dimension of
+   bigarrays is bigger than [1]. *)
+
 type model
 
 external new_model :

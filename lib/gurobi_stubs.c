@@ -65,47 +65,67 @@ static struct custom_operations model_ops = {
 };
 
 /* corresponding to OCaml Bigarray type (float, float64_elt, c_layout) Array1.t */
-double* get_fa( value a, int min_n ) {
+double* get_fa( value a, int min_n, const char* err_msg ) {
   CAMLparam1( a );
-  assert( Caml_ba_array_val(a)->num_dims == 1 );
-  assert( Caml_ba_array_val(a)->dim[0] >= min_n );
-  assert( (Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_FLOAT64 );
-  return Caml_ba_data_val(a);
+  if ( (Caml_ba_array_val(a)->num_dims == 1) &&
+       (Caml_ba_array_val(a)->dim[0] >= min_n) &&
+       ((Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_FLOAT64)
+       ) {
+    return Caml_ba_data_val(a);
+  }
+  else {
+    caml_invalid_argument( err_msg );
+  }
+
 }
 
 /* corresponding to OCaml Bigarray type (int, int32_elt, c_layout) Array1.t */
-int* get_i32a( value a, int min_n ) {
+int* get_i32a( value a, int min_n, const char* err_msg ) {
   CAMLparam1( a );
-  assert( Caml_ba_array_val(a)->num_dims == 1 );
-  assert( Caml_ba_array_val(a)->dim[0] >= min_n );
-  assert( (Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_INT32 );
-  return Caml_ba_data_val(a);
+  if ( (Caml_ba_array_val(a)->num_dims == 1) &&
+       (Caml_ba_array_val(a)->dim[0] >= min_n ) &&
+       ((Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_INT32)
+       ) {
+    return Caml_ba_data_val(a);
+  }
+  else {
+    caml_invalid_argument( err_msg );
+  }
 }
 
 /* corresponding to OCaml Bigarray type (char, int8_unsigned_elt, c_layout) Array1.t */
-char* get_ca( value a, int min_n ) {
+char* get_ca( value a, int min_n, const char* err_msg ) {
   CAMLparam1( a );
-  assert( Caml_ba_array_val(a)->num_dims == 1 );
-  assert( Caml_ba_array_val(a)->dim[0] >= min_n );
-  assert( (Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_CHAR );
-  return Caml_ba_data_val(a);
+  if ( (Caml_ba_array_val(a)->num_dims == 1 ) &&
+       (Caml_ba_array_val(a)->dim[0] >= min_n) &&
+       ((Caml_ba_array_val(a)->flags & CAML_BA_KIND_MASK) == CAML_BA_CHAR )
+       ) {
+    return Caml_ba_data_val(a);
+  }
+  else {
+    caml_invalid_argument( err_msg );
+  }
 }
 
 // from a value representing an OCaml array of strings, return a
 // heap-allocated C array of null-terminated C-strings.
-const char** get_sa( value v_sa )
+const char** get_sa( value v_sa, int expected_n, const char* err_msg )
 {
   CAMLparam1( v_sa );
   CAMLlocal1( v_i );
   int n = Wosize_val( v_sa );
-  const char** sa = malloc( sizeof(char*) * n );
+  if ( n == expected_n ) {
+    const char** sa = malloc( sizeof(char*) * n );
 
-  for (int i = 0; i < n; i++ ) {
-    v_i = Field( v_sa, i );
-    sa[i] = String_val( v_i );
-
+    for (int i = 0; i < n; i++ ) {
+      v_i = Field( v_sa, i );
+      sa[i] = String_val( v_i );
+    }
+    return sa;
   }
-  return sa;
+  else {
+    caml_invalid_argument( err_msg );
+  }
 }
 
 CAMLprim value gu_empty_env( value unit )
@@ -252,7 +272,7 @@ CAMLprim value gu_get_float_attr_array( value v_model, value v_name, value v_sta
   long dims[1];
   dims[0] = len;
   v_array = caml_ba_alloc(CAML_BA_FLOAT64 | CAML_BA_C_LAYOUT, 1, NULL, dims);
-  double* array = get_fa( v_array, len );
+  double* array = get_fa( v_array, len, "get_float_attr_array:<result>" );
   int error = GRBgetdblattrarray( model, name, start, len, array );
 
   if ( error == 0 ) {
@@ -281,7 +301,7 @@ CAMLprim value gu_get_int_attr_array( value v_model, value v_name, value v_start
   long dims[1];
   dims[0] = len;
   v_array = caml_ba_alloc(CAML_BA_INT32 | CAML_BA_C_LAYOUT, 1, NULL, dims);
-  int* array = get_i32a( v_array, len );
+  int* array = get_i32a( v_array, len, "get_int_attr_array:<output>" );
   int error = GRBgetintattrarray( model, name, start, len, array );
 
   if ( error == 0 ) {
@@ -310,7 +330,7 @@ CAMLprim value gu_get_char_attr_array( value v_model, value v_name, value v_star
   long dims[1];
   dims[0] = len;
   v_array = caml_ba_alloc(CAML_BA_CHAR | CAML_BA_C_LAYOUT, 1, NULL, dims);
-  char* array = get_ca( v_array, len );
+  char* array = get_ca( v_array, len, "get_char_attr:<output>" );
   int error = GRBgetcharattrarray( model, name, start, len, array );
 
   if ( error == 0 ) {
@@ -352,36 +372,35 @@ CAMLprim value gu_new_model(
   double* objective = NULL;
   if ( Is_some( v_objective_opt ) ) {
     v_objective = Some_val( v_objective_opt );
-    objective = get_fa( v_objective, num_vars );
+    objective = get_fa( v_objective, num_vars, "new_model:objective" );
   }
 
   // lower bound
   double* lower_bound = NULL;
   if ( Is_some( v_lower_bound_opt ) ) {
     v_lower_bound = Some_val( v_lower_bound_opt );
-    lower_bound = get_fa( v_lower_bound, num_vars );
+    lower_bound = get_fa( v_lower_bound, num_vars, "new_model:lower_bound" );
   }
 
   // upper bound
   double* upper_bound = NULL;
   if ( Is_some( v_upper_bound_opt ) ) {
     v_upper_bound = Some_val( v_upper_bound_opt );
-    upper_bound = get_fa( v_upper_bound, num_vars );
+    upper_bound = get_fa( v_upper_bound, num_vars, "new_model:upper_bound" );
   }
 
   // var type
   char* var_type = NULL;
   if ( Is_some( v_var_type_opt ) ) {
     v_var_type = Some_val( v_var_type_opt );
-    var_type = get_ca( v_var_type, num_vars );
+    var_type = get_ca( v_var_type, num_vars, "new_model:var_type" );
   }
 
   // var names
   const char** var_names = NULL;
   if ( Is_some( v_var_names_opt ) ) {
     v_var_names = Some_val( v_var_names_opt );
-    assert ( Wosize_val( v_var_names ) == num_vars ); // TODO: raise exception instead 
-    var_names = get_sa( v_var_names );
+    var_names = get_sa( v_var_names, num_vars, "new_mode:var_names" );
   }
 
   GRBmodel* model;
@@ -662,19 +681,18 @@ CAMLprim value gu_add_constrs(
     v_c_val = Field( v_compressed, 3 );
 
     num_nz = Int_val( v_num_nz );
-    c_beg = get_i32a( v_c_beg, num_constraints );
-    c_ind = get_i32a( v_c_ind, num_nz );
-    c_val = get_fa( v_c_val, num_nz );
+    c_beg = get_i32a( v_c_beg, num_constraints, "add_constrs:compressed.beg" );
+    c_ind = get_i32a( v_c_ind, num_nz, "add_constrs:compressed.ind" );
+    c_val = get_fa( v_c_val, num_nz, "add_constrs:compressed.val" );
   }
 
-  char* sense = get_ca( v_sense, num_constraints );
-  double* rhs = get_fa( v_rhs, num_constraints );
+  char* sense = get_ca( v_sense, num_constraints, "add_constrs:sense" );
+  double* rhs = get_fa( v_rhs, num_constraints, "add_constrs:rhs" );
 
   const char** constr_names = NULL;
   if ( Is_some( v_constr_names_opt ) ) {
     v_constr_names = Some_val( v_constr_names_opt );
-    assert ( Wosize_val( v_constr_names ) == num_constraints ); // TODO: raise exception instead
-    constr_names = get_sa( v_constr_names );
+    constr_names = get_sa( v_constr_names, num_constraints, "add_constrs:constr_names" );
   }
 
   int error = GRBaddconstrs( model,
@@ -724,8 +742,8 @@ CAMLprim value gu_add_constr(
 
   GRBmodel* model = model_val( v_model );
   int num_nz = Int_val( v_num_nz );
-  int* c_ind = get_i32a( v_c_ind, num_nz );
-  double* c_val = get_fa( v_c_val, num_nz );
+  int* c_ind = get_i32a( v_c_ind, num_nz, "add_constr:ind" );
+  double* c_val = get_fa( v_c_val, num_nz, "add_constr:val" );
   char sense = Int_val( v_sense );
   double rhs = Double_val( v_rhs );
 
@@ -785,45 +803,44 @@ CAMLprim value gu_add_vars(
     v_v_val = Field( v_compressed, 3 );
 
     num_nz = Int_val( v_num_nz );
-    v_beg = get_i32a( v_v_beg, num_vars );
-    v_ind = get_i32a( v_v_ind, num_nz );
-    v_val = get_fa( v_v_val, num_nz );
+    v_beg = get_i32a( v_v_beg, num_vars, "add_vars:compressed.beg" );
+    v_ind = get_i32a( v_v_ind, num_nz, "add_vars:compressed.ind" );
+    v_val = get_fa( v_v_val, num_nz, "add_vars:compressed.val" );
   }
 
   // objective
   double* obj = NULL;
   if ( Is_some( v_obj_opt ) ) {
     v_obj = Some_val( v_obj_opt );
-    obj = get_fa( v_obj, num_vars );
+    obj = get_fa( v_obj, num_vars, "add_vars:objective" );
   }
 
   // lower bound
   double* lower_bound = NULL;
   if ( Is_some( v_lower_bound_opt ) ) {
     v_lower_bound = Some_val( v_lower_bound_opt );
-    lower_bound = get_fa( v_lower_bound, num_vars );
+    lower_bound = get_fa( v_lower_bound, num_vars, "add_vars:lower_bound" );
   }
 
   // upper bound
   double* upper_bound = NULL;
   if ( Is_some( v_upper_bound_opt ) ) {
     v_upper_bound = Some_val( v_upper_bound_opt );
-    upper_bound = get_fa( v_upper_bound, num_vars );
+    upper_bound = get_fa( v_upper_bound, num_vars, "add_vars:upper_bound" );
   }
 
   // var type
   const char* var_type = NULL;
   if ( Is_some( v_var_type_opt ) ) {
     v_var_type = Some_val( v_var_type_opt );
-    var_type = get_ca( v_var_type, num_vars );
+    var_type = get_ca( v_var_type, num_vars, "add_vars:var_type" );
   }
 
   // var names
   const char** var_names = NULL;
   if ( Is_some( v_var_names_opt ) ) {
     v_var_names = Some_val( v_var_names_opt );
-    assert ( Wosize_val( v_var_names ) == num_vars ); // TODO: raise exception instead
-    var_names = get_sa( v_var_names );
+    var_names = get_sa( v_var_names, num_vars, "add_vars:var_names" );
   }
 
   int error = GRBaddvars( model,
