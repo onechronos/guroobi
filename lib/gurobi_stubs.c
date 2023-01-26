@@ -239,6 +239,93 @@ CAMLprim value gu_get_float_param( value v_env, value v_name )
   CAMLreturn( v_res );
 }
 
+// get float attribute array
+CAMLprim value gu_get_float_attr_array( value v_model, value v_name, value v_start, value v_len )
+{
+  CAMLparam4( v_model, v_name, v_start, v_len );
+  CAMLlocal2( v_array, v_res );
+  GRBmodel* model = model_val( v_model );
+  const char* name = String_val( v_name );
+  int start = Int_val( v_start );
+  int len = Int_val( v_len );
+
+  long dims[1];
+  dims[0] = len;
+  v_array = caml_ba_alloc(CAML_BA_FLOAT64 | CAML_BA_C_LAYOUT, 1, NULL, dims);
+  double* array = get_fa( v_array, len );
+  int error = GRBgetdblattrarray( model, name, start, len, array );
+
+  if ( error == 0 ) {
+    // Ok v_array
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_array );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
+// get int attribute array
+CAMLprim value gu_get_int_attr_array( value v_model, value v_name, value v_start, value v_len )
+{
+  CAMLparam4( v_model, v_name, v_start, v_len );
+  CAMLlocal2( v_array, v_res );
+  GRBmodel* model = model_val( v_model );
+  const char* name = String_val( v_name );
+  int start = Int_val( v_start );
+  int len = Int_val( v_len );
+
+  long dims[1];
+  dims[0] = len;
+  v_array = caml_ba_alloc(CAML_BA_INT32 | CAML_BA_C_LAYOUT, 1, NULL, dims);
+  int* array = get_i32a( v_array, len );
+  int error = GRBgetintattrarray( model, name, start, len, array );
+
+  if ( error == 0 ) {
+    // Ok v_array
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_array );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
+// get char attribute array
+CAMLprim value gu_get_char_attr_array( value v_model, value v_name, value v_start, value v_len )
+{
+  CAMLparam4( v_model, v_name, v_start, v_len );
+  CAMLlocal2( v_array, v_res );
+  GRBmodel* model = model_val( v_model );
+  const char* name = String_val( v_name );
+  int start = Int_val( v_start );
+  int len = Int_val( v_len );
+
+  long dims[1];
+  dims[0] = len;
+  v_array = caml_ba_alloc(CAML_BA_CHAR | CAML_BA_C_LAYOUT, 1, NULL, dims);
+  char* array = get_ca( v_array, len );
+  int error = GRBgetcharattrarray( model, name, start, len, array );
+
+  if ( error == 0 ) {
+    // Ok v_array
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_array );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
 // create a new model
 CAMLprim value gu_new_model(
  value v_env,

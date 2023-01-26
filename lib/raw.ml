@@ -64,6 +64,15 @@ external get_str_attr : model -> string -> (string, int) result
 external set_int_attr : model -> string -> int -> int = "gu_set_int_attr"
 external get_int_attr : model -> string -> (int, int) result = "gu_get_int_attr"
 
+external get_float_attr_array :
+  model -> string -> int -> int -> (fa, int) result = "gu_get_float_attr_array"
+
+external get_int_attr_array :
+  model -> string -> int -> int -> (i32a, int) result = "gu_get_int_attr_array"
+
+external get_char_attr_array : model -> string -> int -> int -> (ca, int) result
+  = "gu_get_char_attr_array"
+
 type compressed = {
   num_nz : int;
   xbeg : i32a;
