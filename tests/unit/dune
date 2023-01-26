@@ -1,1 +1,4 @@
-(tests (names diet mip1) (libraries gurobi unix))
+(tests
+  (names diet mip1 workforce1)
+  (libraries gurobi unix)
+)

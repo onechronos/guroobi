@@ -893,3 +893,11 @@ CAMLprim value gu_write( value v_model, value v_path )
   int error = GRBwrite( model, path );
   CAMLreturn( Val_int( error ) );
 }
+
+CAMLprim value gu_compute_iis( value v_model )
+{
+  CAMLparam1( v_model );
+  GRBmodel* model = model_val( v_model );
+  int error = GRBcomputeIIS( model );
+  CAMLreturn( Val_int( error ) );
+}

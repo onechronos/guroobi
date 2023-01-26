@@ -106,3 +106,4 @@ external add_vars :
 
 external optimize : model -> int = "gu_optimize"
 external write : model -> string -> int = "gu_write"
+external compute_iis : model -> int = "gu_compute_iis"
