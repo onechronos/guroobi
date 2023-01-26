@@ -16,14 +16,14 @@ let main key_path =
       | Ok env -> env
     in
 
-    az (set_int_param env "OutputFlag" 0);
+    az (set_int_param env GRB.int_par_outputflag 0);
 
     az (set_str_param env "GURO_PAR_ISVNAME" name);
     az (set_str_param env "GURO_PAR_ISVAPPNAME" app_name);
     az (set_int_param env "GURO_PAR_ISVEXPIRATION" expiration);
     az (set_str_param env "GURO_PAR_ISVKEY" v);
 
-    az (set_str_param env "LogFile" "mip1.log");
+    az (set_str_param env GRB.str_par_logfile "mip1.log");
 
     az (start_env env);
 
