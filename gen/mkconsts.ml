@@ -12,46 +12,41 @@
    {{{ (* optional comment *) let xyz_pqr = abc }}} Note that we lower-case the
    CPP *)
 
-module IncludeFileParser = struct
-  open Angstrom
+module PoundDefineLineParse = struct
+  open Re.Pcre
 
-  let whitespace = skip_while (function ' ' | '\t' -> true | _ -> false)
-  let not_whitespace = take_while1 (function ' ' | '\t' -> false | _ -> true)
-  let any = take_while (function _ -> true)
-
-  let alphanum_and_underscore =
-    take_while1 (function
-      | '_' | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' -> true
-      | _ -> false)
-
-  let lex p = p <* whitespace
-
-  (* keys have the form eg BLAH_ASDF_XYZ *)
-  let key = alphanum_and_underscore
-
-  (* we expect values to be valid, C integer, float and string literals, to also
-     be valid OCaml literals *)
-  let value = not_whitespace
-
-  (* a C comment starts with '/*', and if present, we want to capture it *)
-  let comment = whitespace *> string "/*" *> any
-
-  let kv_c =
-    let some x = Some x in
-    lift3
-      (fun k v c -> (k, v, c))
-      (lex key) (lex value)
-      (lex (option None (comment >>| some)))
-
-  (* we strip away the GRB_ prefix, which is in every key *)
-  let define_line = string "#define GRB_" *> kv_c
-
-  let parse str =
+  let define str =
     try
-      match parse_string ~consume:All define_line str with
-      | Ok v -> Some v
-      | Error _msg -> None
-    with Failure _ -> None
+      let kv =
+        Scanf.sscanf str "#define GRB_%s %s" (fun key value -> (key, value))
+      in
+      Some kv
+    with Scanf.Scan_failure _ | End_of_file -> None
+
+  (* here, we remove the trailing close comment string "*/". *)
+  let remove_close_comment s =
+    let len = String.length s in
+    if len >= 2 then
+      if s.[len - 2] = '*' && s.[len - 1] = '/' then String.sub s 0 (len - 2)
+      else s
+    else s
+
+  let low = String.lowercase_ascii
+  let open_comment_rex = regexp "/\\*"
+
+  let parse line =
+    match split ~rex:open_comment_rex line with
+    | before_open_comment :: after_open_comment :: _ -> (
+      match define before_open_comment with
+      | None -> None
+      | Some (k, v) ->
+        let comment = remove_close_comment after_open_comment in
+        Some (low k, v, Some comment))
+    | [ no_comment ] -> (
+      match define no_comment with
+      | None -> None
+      | Some (k, v) -> Some (low k, v, None))
+    | [] -> None
 end
 
 module SM = Map.Make (String)
@@ -74,7 +69,7 @@ let () =
   match
     Bos.OS.File.fold_lines
       (fun kvc_list line ->
-        match IncludeFileParser.parse line with
+        match PoundDefineLineParse.parse line with
         | Some kvc -> kvc :: kvc_list
         | None -> kvc_list)
       [] (Fpath.v input_path)
@@ -97,10 +92,7 @@ let () =
       (fun (k, v, c_opt) ->
         (match c_opt with
         | None -> ()
-        | Some comment ->
-          let comment_no_trail = remove_trailing_close_comment comment in
-          pr "(* %s *)\n" comment_no_trail);
-        let k_low = String.lowercase_ascii k in
-        pr "let %s = %s\n" k_low v)
+        | Some comment -> pr "(* %s *)\n" comment);
+        pr "let %s = %s\n" k v)
       kvc_list;
     close_out ch

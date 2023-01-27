@@ -1,1 +1,1 @@
-(executable (name mkconsts) (libraries bos angstrom))
+(executable (name mkconsts) (libraries bos re.pcre))
