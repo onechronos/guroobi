@@ -49,8 +49,6 @@ module PoundDefineLineParse = struct
     | [] -> None
 end
 
-module SM = Map.Make (String)
-
 (* here, we remove the trailing close comment string "*/". I can't figure out
    how to remove it with the parse *)
 let remove_trailing_close_comment s =
