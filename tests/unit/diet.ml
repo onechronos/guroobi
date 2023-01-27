@@ -113,7 +113,8 @@ let main key_path =
 
     let model =
       match
-        new_model env "diet" (n_foods + n_categories) None None None None None
+        new_model env (Some "diet") (n_foods + n_categories) None None None None
+          None
       with
       | Error c ->
         pr "new_model result: %d\n%!" c;

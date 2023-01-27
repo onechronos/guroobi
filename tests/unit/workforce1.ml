@@ -68,8 +68,8 @@ let main key_path =
     az (start_env env);
     let model =
       match
-        new_model env "workforce1" (n_workers * n_shifts) None None None None
-          None
+        new_model env (Some "workforce1") (n_workers * n_shifts) None None None
+          None None
       with
       | Error c ->
         pr "new_model result: %d\n%!" c;

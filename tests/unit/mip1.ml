@@ -28,7 +28,7 @@ let main key_path =
     az (start_env env);
 
     let model =
-      match new_model env "mip1" 0 None None None None None with
+      match new_model env (Some "mip1") 0 None None None None None with
       | Error c ->
         pr "new_model result: %d\n%!" c;
         exit 1

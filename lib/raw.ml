@@ -29,7 +29,7 @@ type model
 
 external new_model :
   env ->
-  string ->
+  string option ->
   int ->
   fa option ->
   fa option ->

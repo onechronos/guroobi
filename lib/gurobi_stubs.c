@@ -349,7 +349,7 @@ CAMLprim value gu_get_char_attr_array( value v_model, value v_name, value v_star
 // create a new model
 CAMLprim value gu_new_model(
  value v_env,
- value v_name,
+ value v_name_opt,
  value v_num_vars,
  value v_objective_opt,
  value v_lower_bound_opt,
@@ -359,13 +359,21 @@ CAMLprim value gu_new_model(
 )
 
 {
-  CAMLparam5( v_env, v_name, v_num_vars, v_objective_opt, v_lower_bound_opt );
+  CAMLparam5( v_env, v_name_opt, v_num_vars, v_objective_opt, v_lower_bound_opt );
   CAMLxparam3( v_upper_bound_opt, v_var_type_opt, v_var_names_opt );
   CAMLlocal5( v_model, v_res, v_var_names, v_objective, v_lower_bound );
-  CAMLlocal2( v_upper_bound, v_var_type );
+  CAMLlocal3( v_upper_bound, v_var_type, v_name );
 
   GRBenv* env = env_val( v_env );
-  const char* name = String_val( v_name );
+
+  // name, optional
+  const char* name = NULL;
+  if ( Is_some( v_name_opt ) ) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+
+  // number of variables
   int num_vars = Int_val( v_num_vars );
 
   // objective
