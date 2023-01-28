@@ -65,7 +65,7 @@ static struct custom_operations model_ops = {
 };
 
 /* corresponding to OCaml Bigarray type (float, float64_elt, c_layout) Array1.t */
-double* get_fa( value a, int min_n, const char* err_msg ) {
+static double* get_fa( value a, int min_n, const char* err_msg ) {
   CAMLparam1( a );
   if ( (Caml_ba_array_val(a)->num_dims == 1) &&
        (Caml_ba_array_val(a)->dim[0] >= min_n) &&
@@ -80,7 +80,7 @@ double* get_fa( value a, int min_n, const char* err_msg ) {
 }
 
 /* corresponding to OCaml Bigarray type (int, int32_elt, c_layout) Array1.t */
-int* get_i32a( value a, int min_n, const char* err_msg ) {
+static int* get_i32a( value a, int min_n, const char* err_msg ) {
   CAMLparam1( a );
   if ( (Caml_ba_array_val(a)->num_dims == 1) &&
        (Caml_ba_array_val(a)->dim[0] >= min_n ) &&
@@ -94,7 +94,7 @@ int* get_i32a( value a, int min_n, const char* err_msg ) {
 }
 
 /* corresponding to OCaml Bigarray type (char, int8_unsigned_elt, c_layout) Array1.t */
-char* get_ca( value a, int min_n, const char* err_msg ) {
+static char* get_ca( value a, int min_n, const char* err_msg ) {
   CAMLparam1( a );
   if ( (Caml_ba_array_val(a)->num_dims == 1 ) &&
        (Caml_ba_array_val(a)->dim[0] >= min_n) &&
@@ -109,7 +109,7 @@ char* get_ca( value a, int min_n, const char* err_msg ) {
 
 // from a value representing an OCaml array of strings, return a
 // heap-allocated C array of null-terminated C-strings.
-const char** get_sa( value v_sa, int expected_n, const char* err_msg )
+static const char** get_sa( value v_sa, int expected_n, const char* err_msg )
 {
   CAMLparam1( v_sa );
   CAMLlocal1( v_i );
