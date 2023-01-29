@@ -58,6 +58,25 @@ let remove_trailing_close_comment s =
     else s
   else s
 
+(* identify parameters beginning with GRB_ERROR_; the values associated with
+   these keys are those returned by API functions. we identify them here in
+   order to build a map from value (an integer) to a string that can be used in
+   error messages. *)
+let error_map =
+  let e = String.length "error_" in
+  fun kvc_list ->
+    List.fold_left
+      (fun code_message_assoc (k, code_s, (_ : string option)) ->
+        if String.length k > e && StringLabels.sub k ~pos:0 ~len:e = "error_"
+        then
+          let msg_ = StringLabels.sub ~pos:e ~len:(String.length k - e) k in
+          (* replace underscores with spaces *)
+          let msg = String.map (function '_' -> ' ' | c -> c) msg_ in
+          let code = int_of_string code_s in
+          (code, msg) :: code_message_assoc
+        else code_message_assoc)
+      [] kvc_list
+
 let () =
   (* input: C include file *)
   let input_path = Sys.argv.(1) in
@@ -85,6 +104,15 @@ let () =
        attribute to the file, we override this treatment, so that warnings do
        not trigger compilation errors. *)
     pr "[@@@warnerror \"-32\"]\n";
+
+    (* print a map (or rather, association list) from error codes to error
+       messages *)
+    let code_error_msg_assoc = error_map kvc_list in
+    pr "let code_error_msg_assoc = [\n";
+    List.iter
+      (fun (code, error_msg) -> pr "  %d, %S;\n" code error_msg)
+      code_error_msg_assoc;
+    pr "]\n";
 
     List.iter
       (fun (k, v, c_opt) ->
