@@ -1,6 +1,7 @@
 open Gurobi
 open Raw
 open Utils
+open U
 
 let n_shifts = 14
 let n_workers = 7
@@ -44,37 +45,20 @@ let availability =
 let xcol w s = (n_shifts * w) + s
 
 let main key_path =
-  match Key.get key_path with
+  let env = eer "empty_env" (empty_env ()) in
+  match Key.set env key_path with
   | Error msg ->
     print_endline msg;
     exit 1
-  | Ok { Key.name; app_name; expiration; v } ->
-    let env =
-      match empty_env () with
-      | Error c ->
-        pr "empty_env result: %d\n%!" c;
-        exit 1
-      | Ok env -> env
-    in
-
-    az (set_str_param env "GURO_PAR_ISVNAME" name);
-    az (set_str_param env "GURO_PAR_ISVAPPNAME" app_name);
-    az (set_int_param env "GURO_PAR_ISVEXPIRATION" expiration);
-    az (set_str_param env "GURO_PAR_ISVKEY" v);
-
+  | Ok () ->
     az (set_str_param env GRB.str_par_logfile "workforce1.log");
     az (set_int_param env GRB.int_par_outputflag 0);
 
     az (start_env env);
     let model =
-      match
-        new_model env (Some "workforce1") (n_workers * n_shifts) None None None
-          None None
-      with
-      | Error c ->
-        pr "new_model result: %d\n%!" c;
-        exit 1
-      | Ok model -> model
+      eer "new_mode"
+        (new_model env (Some "workforce1") (n_workers * n_shifts) None None None
+           None None)
     in
 
     for w = 0 to n_workers - 1 do
@@ -117,22 +101,11 @@ let main key_path =
          (Some shifts));
 
     az (optimize model);
-    let status =
-      match get_int_attr model GRB.int_attr_status with
-      | Error code ->
-        pr "error getting in attribute %s; code=%d\n%!" GRB.int_attr_status code;
-        exit 1
-      | Ok status -> status
-    in
-
+    let status = eer "get_int_attr" (get_int_attr model GRB.int_attr_status) in
     if status = GRB.unbounded then pr "model unbounded\n"
     else if status = GRB.optimal then
       let obj_val =
-        match get_float_attr model GRB.dbl_attr_objval with
-        | Error code ->
-          pr "error getting attribute %s; code=%d\n%!" GRB.dbl_attr_objval code;
-          exit 1
-        | Ok obj_val -> obj_val
+        eer "get_float_attr" (get_float_attr model GRB.dbl_attr_objval)
       in
       pr "obj: %.4e\n" obj_val
     else if status != GRB.inf_or_unbd && status != GRB.infeasible then
@@ -141,26 +114,21 @@ let main key_path =
       pr "model infeasible; computing IIS\n";
       az (compute_iis model);
       pr "following constraint(s) cannot be satisfied:\n";
-      match get_int_attr model GRB.int_attr_numconstrs with
-      | Error code ->
-        pr "error getting attribute %s; code=%d\n%!" GRB.int_attr_numconstrs
-          code;
-        exit 1
-      | Ok num_constraints ->
-        for i = 0 to num_constraints - 1 do
-          match get_int_attr_element model GRB.int_attr_iis_constr i with
-          | Error code ->
-            pr "error getting attribute %s; code=%d\n%!" GRB.int_attr_iis_constr
-              code;
-            exit 1
-          | Ok iis -> (
-            if iis != 0 then
-              match get_str_attr_element model GRB.str_attr_constrname i with
-              | Error code ->
-                pr "error getting attribute %s; code=%d\n%!"
-                  GRB.str_attr_constrname code
-              | Ok constraint_name -> pr "%s\n" constraint_name)
-        done)
+      let num_constraints =
+        eer "get_int_attr" (get_int_attr model GRB.int_attr_numconstrs)
+      in
+      for i = 0 to num_constraints - 1 do
+        let iis =
+          eer "get_int_attr"
+            (get_int_attr_element model GRB.int_attr_iis_constr i)
+        in
+        if iis != 0 then
+          let constraint_name =
+            eer "get_str_attr_element"
+              (get_str_attr_element model GRB.str_attr_constrname i)
+          in
+          pr "%s\n" constraint_name
+      done)
 
 let _ =
   let key_path_env_var = "GUROBI_ISV_KEY_PATH" in

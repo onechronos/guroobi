@@ -1,38 +1,21 @@
 open Gurobi
 open Raw
 open Utils
+open U
 
 let main key_path =
-  match Key.get key_path with
+  let env = eer "empty_env" (empty_env ()) in
+  match Key.set env key_path with
   | Error msg ->
     print_endline msg;
     exit 1
-  | Ok { Key.name; app_name; expiration; v } ->
-    let env =
-      match empty_env () with
-      | Error c ->
-        pr "empty_env result: %d\n%!" c;
-        exit 1
-      | Ok env -> env
-    in
-
+  | Ok () ->
     az (set_int_param env GRB.int_par_outputflag 0);
-
-    az (set_str_param env "GURO_PAR_ISVNAME" name);
-    az (set_str_param env "GURO_PAR_ISVAPPNAME" app_name);
-    az (set_int_param env "GURO_PAR_ISVEXPIRATION" expiration);
-    az (set_str_param env "GURO_PAR_ISVKEY" v);
-
     az (set_str_param env GRB.str_par_logfile "mip1.log");
-
     az (start_env env);
 
     let model =
-      match new_model env (Some "mip1") 0 None None None None None with
-      | Error c ->
-        pr "new_model result: %d\n%!" c;
-        exit 1
-      | Ok model -> model
+      eer "new_mode" (new_model env (Some "mip1") 0 None None None None None)
     in
 
     let num_vars = 3 in
@@ -71,30 +54,16 @@ let main key_path =
     az (optimize model);
     az (write model "mip1.lp");
 
-    let status =
-      match get_int_attr model GRB.int_attr_status with
-      | Error code ->
-        pr "error getting in attribute %s; code=%d\n%!" GRB.int_attr_status code;
-        exit 1
-      | Ok status -> status
-    in
-
+    let status = eer "get_int_attr" (get_int_attr model GRB.int_attr_status) in
     if status = GRB.optimal then (
       let obj_val =
-        match get_float_attr model GRB.dbl_attr_objval with
-        | Error code ->
-          pr "error getting attribute %s; code=%d\n%!" GRB.dbl_attr_objval code;
-          exit 1
-        | Ok obj_val -> obj_val
+        eer "get_float_attr" (get_float_attr model GRB.dbl_attr_objval)
       in
       pr "obj: %.4e\n" obj_val;
 
       let sol =
-        match get_float_attr_array model GRB.dbl_attr_x 0 3 with
-        | Error code ->
-          pr "error getting attribute %s; code=%d\n%!" GRB.dbl_attr_x code;
-          exit 1
-        | Ok sol -> sol
+        eer "get_float_attr_array"
+          (get_float_attr_array model GRB.dbl_attr_x 0 3)
       in
       pr "x=%.0f\ny=%.0f\nz=%.0f\n" sol.{0} sol.{1} sol.{2})
     else if status = GRB.inf_or_unbd then

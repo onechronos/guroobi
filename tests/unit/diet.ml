@@ -1,78 +1,59 @@
 open Gurobi
 open Raw
 open Utils
+open U
 
 let pr_name_and_value model j =
-  match get_float_attr_element model GRB.dbl_attr_x j with
-  | Error code ->
-    pr "get x[%d] failed with code=%d\n%!" j code;
-    exit 1
-  | Ok x_j -> (
-    if x_j > 0.0001 then
-      match get_str_attr_element model GRB.str_attr_varname j with
-      | Error code -> pr "get varname[%d] failed with code=%d\n%!" j code
-      | Ok var_name -> pr "%s %f\n" var_name x_j)
+  let x_j =
+    eer "get_float_attr_element" (get_float_attr_element model GRB.dbl_attr_x j)
+  in
+  if x_j > 0.0001 then
+    let var_name =
+      eer "get_str_attr_element"
+        (get_str_attr_element model GRB.str_attr_varname j)
+    in
+    pr "%s %f\n" var_name x_j
 
 let print_solution model n_categories n_foods =
-  match get_int_attr model GRB.int_attr_status with
-  | Error code ->
-    pr "get status failed with code=%d\n%!" code;
-    exit 1
-  | Ok status ->
-    if status = GRB.optimal then (
-      match get_float_attr model GRB.dbl_attr_objval with
-      | Error code ->
-        pr "get objval failed with code=%d\n%!" code;
-        exit 1
-      | Ok obj ->
-        pr "Cost: %f\n\nBuy:\n" obj;
-        for j = 0 to n_foods - 1 do
-          match get_float_attr_element model GRB.dbl_attr_x j with
-          | Error code ->
-            pr "get x[%d] failed with code=%d\n%!" j code;
-            exit 1
-          | Ok x_j -> (
-            if x_j > 0.0001 then
-              match get_str_attr_element model GRB.str_attr_varname j with
-              | Error code ->
-                pr "get varname[%d] failed with code=%d\n%!" j code
-              | Ok var_name -> pr "%s %f\n" var_name x_j)
-        done;
-        pr "\nNutrition:\n";
-        for j = 0 to n_categories - 1 do
-          let i = n_foods + j in
-          match get_float_attr_element model GRB.dbl_attr_x i with
-          | Error code ->
-            pr "get x[%d] failed with code=%d\n%!" i code;
-            exit 1
-          | Ok x_i -> (
-            match get_str_attr_element model GRB.str_attr_varname i with
-            | Error code -> pr "get varname[%d] failed with code=%d\n%!" i code
-            | Ok var_name -> pr "%s %f\n" var_name x_i)
-        done)
-    else print_endline "no solution"
+  let status = eer "get_int_attr" (get_int_attr model GRB.int_attr_status) in
+  if status = GRB.optimal then (
+    let obj = eer "get_float_attr" (get_float_attr model GRB.dbl_attr_objval) in
+    pr "Cost: %f\n\nBuy:\n" obj;
+    for j = 0 to n_foods - 1 do
+      let x_j =
+        eer "get_float_attr_element"
+          (get_float_attr_element model GRB.dbl_attr_x j)
+      in
+      if x_j > 0.0001 then
+        let var_name =
+          eer "get_str_attr_element"
+            (get_str_attr_element model GRB.str_attr_varname j)
+        in
+        pr "%s %f\n" var_name x_j
+    done;
+    pr "\nNutrition:\n";
+    for j = 0 to n_categories - 1 do
+      let i = n_foods + j in
+      let x_i =
+        eer "get_float_attr_element"
+          (get_float_attr_element model GRB.dbl_attr_x i)
+      in
+      let var_name =
+        eer "get_str_attr_element"
+          (get_str_attr_element model GRB.str_attr_varname i)
+      in
+      pr "%s %f\n" var_name x_i
+    done)
+  else print_endline "no solution"
 
 let main key_path =
-  match Key.get key_path with
+  let env = eer "empty_env" (empty_env ()) in
+  match Key.set env key_path with
   | Error msg ->
     print_endline msg;
     exit 1
-  | Ok { Key.name; app_name; expiration; v } ->
-    let env =
-      match empty_env () with
-      | Error c ->
-        pr "empty_env result: %d\n%!" c;
-        exit 1
-      | Ok env -> env
-    in
-
+  | Ok () ->
     az (set_int_param env GRB.int_par_outputflag 0);
-
-    az (set_str_param env "GURO_PAR_ISVNAME" name);
-    az (set_str_param env "GURO_PAR_ISVAPPNAME" app_name);
-    az (set_int_param env "GURO_PAR_ISVEXPIRATION" expiration);
-    az (set_str_param env "GURO_PAR_ISVKEY" v);
-
     az (start_env env);
 
     let categories = [| "calories"; "protein"; "fat"; "sodium" |] in
@@ -112,14 +93,9 @@ let main key_path =
     in
 
     let model =
-      match
-        new_model env (Some "diet") (n_foods + n_categories) None None None None
-          None
-      with
-      | Error c ->
-        pr "new_model result: %d\n%!" c;
-        exit 1
-      | Ok model -> model
+      eer "new_model"
+        (new_model env (Some "diet") (n_foods + n_categories) None None None
+           None None)
     in
 
     az (set_int_attr model GRB.int_attr_modelsense GRB.minimize);
