@@ -459,6 +459,31 @@ CAMLprim value gu_new_model_bc(value* v_args, int arg_n )
 		     );
 }
 
+// create a model from a file
+CAMLprim value gu_read_model( value v_env, value v_path )
+{
+  CAMLparam2( v_env, v_path );
+  CAMLlocal2( v_model, v_res );
+  GRBenv* env = env_val( v_env );
+  const char* path = String_val( v_path );
+  GRBmodel* model = NULL;
+  int error = GRBreadmodel( env, path, &model );
+  if ( error == 0 ) {
+    v_model = caml_alloc_custom(&model_ops, sizeof(void*), 0, 1);
+    model_val(v_model) = model;
+
+    // Ok model
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_model );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
 // set a float attribute in an implicit array of such attributes
 CAMLprim value gu_set_float_attr_element(value v_model, value v_name, value v_element, value v_new_value )
 {

@@ -38,6 +38,8 @@ external new_model :
   string array option ->
   (model, int) result = "gu_new_model_bc" "gu_new_model"
 
+external read_model : env -> string -> (model, int) result = "gu_read_model"
+
 external set_float_attr_element : model -> string -> int -> float -> int
   = "gu_set_float_attr_element"
 
