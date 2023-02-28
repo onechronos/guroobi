@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <string.h>
+#include <unistd.h>
 
 // naming convention: Gurobi's functions consist of multiple words,
 // concatenated without a space, resulting in unfortunate
@@ -346,6 +348,34 @@ CAMLprim value gu_get_char_attr_array( value v_model, value v_name, value v_star
   CAMLreturn( v_res );
 }
 
+// get string attribute array
+CAMLprim value gu_get_str_attr_array( value v_model, value v_name, value v_start, value v_len )
+{
+  CAMLparam4( v_model, v_name, v_start, v_len );
+  CAMLlocal2( v_array, v_res );
+  GRBmodel* model = model_val( v_model );
+  const char* name = String_val( v_name );
+  int start = Int_val( v_start );
+  int len = Int_val( v_len );
+  char* array[len];
+  int error = GRBgetstrattrarray( model, name, start, len, array );
+  if ( error == 0 ) {
+    // Ok v_array
+    v_array = caml_alloc( len, 0 );
+    for (int i = 0; i < len; i++ ) {
+      Store_field( v_array, i, caml_alloc_initialized_string( strlen(array[i]), array[i] ) );
+    }
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_array );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
 // create a new model
 CAMLprim value gu_new_model(
  value v_env,
@@ -466,21 +496,33 @@ CAMLprim value gu_read_model( value v_env, value v_path )
   CAMLlocal2( v_model, v_res );
   GRBenv* env = env_val( v_env );
   const char* path = String_val( v_path );
-  GRBmodel* model = NULL;
-  int error = GRBreadmodel( env, path, &model );
-  if ( error == 0 ) {
-    v_model = caml_alloc_custom(&model_ops, sizeof(void*), 0, 1);
-    model_val(v_model) = model;
 
-    // Ok model
-    v_res = caml_alloc(1, 0);
-    Store_field( v_res, 0, v_model );
+  // we have to check the existance of the file because GRBreadmodel()
+  // does not do it, resulting in bus errors when the path is long
+  if (access(path, F_OK) == 0) {
+    // file exists
+    GRBmodel* model = NULL;
+    int error = GRBreadmodel( env, path, &model );
+    if ( error == 0 ) {
+      v_model = caml_alloc_custom(&model_ops, sizeof(void*), 0, 1);
+      model_val(v_model) = model;
+
+      // Ok model
+      v_res = caml_alloc(1, 0);
+      Store_field( v_res, 0, v_model );
+    }
+    else {
+      // Error code
+      v_res = caml_alloc(1, 1);
+      Store_field( v_res, 0, Val_int(error) );
+    }
+
   }
   else {
-    // Error code
-    v_res = caml_alloc(1, 1);
-    Store_field( v_res, 0, Val_int(error) );
+    // file does not exist
+    v_res = Val_int(0);
   }
+
   CAMLreturn( v_res );
 }
 

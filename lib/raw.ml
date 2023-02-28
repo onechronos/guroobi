@@ -38,7 +38,12 @@ external new_model :
   string array option ->
   (model, int) result = "gu_new_model_bc" "gu_new_model"
 
-external read_model : env -> string -> (model, int) result = "gu_read_model"
+type read_model_result =
+  | FileNotFound
+  | Ok of model
+  | Error of int
+
+external read_model : env -> string -> read_model_result = "gu_read_model"
 
 external set_float_attr_element : model -> string -> int -> float -> int
   = "gu_set_float_attr_element"
@@ -79,6 +84,10 @@ external get_int_attr_array :
 
 external get_char_attr_array : model -> string -> int -> int -> (ca, int) result
   = "gu_get_char_attr_array"
+
+external get_str_attr_array :
+  model -> string -> int -> int -> (string array, int) result
+  = "gu_get_str_attr_array"
 
 type compressed = {
   num_nz : int;
