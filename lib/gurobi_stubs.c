@@ -173,14 +173,26 @@ CAMLprim value gu_set_int_param( value v_env, value v_name, value v_i )
   CAMLreturn( Val_int( error ) );
 }
 
+CAMLprim value gu_set_int_model_param( value v_model, value v_name, value v_i )
+{
+  CAMLparam3( v_model, v_name, v_i );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int i = Int_val(v_i);
+  GRBenv* env = GRBgetenv( model );
+  assert( env != NULL );
+  int error = GRBsetintparam( env, name, i );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_get_int_param( value v_env, value v_name )
 {
   CAMLparam2( v_env, v_name );
   CAMLlocal1( v_res );
-  GRBenv* gurobi = env_val(v_env);
+  GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
   int i;
-  int error = GRBgetintparam( gurobi, name, &i );
+  int error = GRBgetintparam( env, name, &i );
   if ( error == 0 ) {
     // Ok i
     v_res = caml_alloc(1, 0);
@@ -194,6 +206,29 @@ CAMLprim value gu_get_int_param( value v_env, value v_name )
   CAMLreturn( v_res );
 }
   
+CAMLprim value gu_get_int_model_param( value v_model, value v_name )
+{
+  CAMLparam2( v_model, v_name );
+  CAMLlocal1( v_res );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int i;
+  GRBenv* env = GRBgetenv( model );
+  assert ( env != NULL );
+  int error = GRBgetintparam( env, name, &i );
+  if ( error == 0 ) {
+    // Ok i
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, Val_int(i) );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
 // set and get string parameters 
 CAMLprim value gu_set_str_param( value v_env, value v_name, value v_i )
 {
@@ -201,6 +236,18 @@ CAMLprim value gu_set_str_param( value v_env, value v_name, value v_i )
   GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
   const char* s = String_val(v_i);
+  int error = GRBsetstrparam( env, name, s );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_set_str_model_param( value v_model, value v_name, value v_i )
+{
+  CAMLparam3( v_model, v_name, v_i );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  const char* s = String_val(v_i);
+  GRBenv* env = GRBgetenv( model );
+  assert ( env != NULL );
   int error = GRBsetstrparam( env, name, s );
   CAMLreturn( Val_int( error ) );
 }
@@ -228,14 +275,51 @@ CAMLprim value gu_get_str_param( value v_env, value v_name )
   CAMLreturn( v_res );
 }
 
+CAMLprim value gu_get_str_model_param( value v_model, value v_name )
+{
+  CAMLparam2( v_model, v_name );
+  CAMLlocal2( v_res, v_s );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  char s[GRB_MAX_STRLEN];
+  GRBenv* env = GRBgetenv( model );
+  assert ( env != NULL );
+  int error = GRBgetstrparam( env, name, s );
+  if ( error == 0 ) {
+    v_s = caml_copy_string( s );
+
+    // Ok s
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_s );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
 // set and get floating-point  parameters
 CAMLprim value gu_set_float_param( value v_env, value v_name, value v_f )
 {
   CAMLparam3( v_env, v_name, v_f );
-  GRBenv* gurobi = env_val(v_env);
+  GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
   double f = Double_val(v_f);
-  int error = GRBsetdblparam( gurobi, name, f );
+  int error = GRBsetdblparam( env, name, f );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_set_float_model_param( value v_model, value v_name, value v_f )
+{
+  CAMLparam3( v_model, v_name, v_f );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  double f = Double_val(v_f);
+  GRBenv* env = GRBgetenv( model );
+  assert( env != NULL );
+  int error = GRBsetdblparam( env, name, f );
   CAMLreturn( Val_int( error ) );
 }
 
@@ -246,6 +330,30 @@ CAMLprim value gu_get_float_param( value v_env, value v_name )
   GRBenv* env = env_val(v_env);
   const char* name = String_val(v_name);
   double f;
+  int error = GRBgetdblparam( env, name, &f );
+  if ( error == 0 ) {
+    v_f = caml_copy_double(f);
+    // Ok f
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_f );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
+CAMLprim value gu_get_float_model_param( value v_model, value v_name )
+{
+  CAMLparam2( v_model, v_name );
+  CAMLlocal2( v_res, v_f );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  double f;
+  GRBenv* env = GRBgetenv( model );
+  assert( env != NULL );
   int error = GRBgetdblparam( env, name, &f );
   if ( error == 0 ) {
     v_f = caml_copy_double(f);
@@ -585,6 +693,40 @@ CAMLprim value gu_get_str_attr_element(value v_model, value v_name, value v_elem
     // Ok s
     v_res = caml_alloc(1, 0);
     Store_field( v_res, 0, caml_copy_string(s) );
+  }
+  else {
+    // Error code
+    v_res = caml_alloc(1, 1);
+    Store_field( v_res, 0, Val_int(error) );
+  }
+  CAMLreturn( v_res );
+}
+
+// set and get a character attribute in an implicit array of such attributes
+CAMLprim value gu_set_char_attr_element(value v_model, value v_name, value v_element, value v_new_value )
+{
+  CAMLparam4( v_model, v_name, v_element, v_new_value );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int element = Int_val(v_element);
+  char new_value = Int_val(v_new_value);
+  int error = GRBsetcharattrelement( model, name, element, new_value );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_get_char_attr_element(value v_model, value v_name, value v_element )
+{
+  CAMLparam3( v_model, v_name, v_element );
+  CAMLlocal2( v_res, v_s );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int element = Int_val(v_element);
+  char c;
+  int error = GRBgetcharattrelement( model, name, element, &c );
+  if ( error == 0 ) {
+    // Ok s
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, Val_int(c) );
   }
   else {
     // Error code
@@ -976,3 +1118,73 @@ CAMLprim value gu_compute_iis( value v_model )
   int error = GRBcomputeIIS( model );
   CAMLreturn( Val_int( error ) );
 }
+
+CAMLprim value gu_set_objective_n(
+  value v_model,
+  value v_index,
+  value	v_priority,
+  value v_weight,
+  value	v_abstol,
+  value v_reltol,
+  value v_name_opt,
+  value v_constant,
+  value	v_nnz,
+  value	v_ind,
+  value	v_val
+)
+{
+  CAMLparam5( v_model, v_index, v_priority, v_weight, v_abstol );
+  CAMLxparam5( v_reltol, v_name_opt, v_constant, v_nnz, v_ind );
+  CAMLxparam1( v_val );
+  CAMLlocal1( v_name );
+
+  GRBmodel* model = model_val( v_model );
+  int index = Int_val( v_index );
+  int priority = Int_val( v_priority );
+  double weight = Double_val( v_weight );
+  double abstol = Double_val( v_abstol );
+  double reltol = Double_val( v_reltol );
+
+  // name, optional
+  const char* name = NULL;
+  if ( Is_some( v_name_opt ) ) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+
+  double constant = Double_val( v_constant );
+  int nnz = Int_val( v_nnz );
+  int* ind = get_i32a( v_ind, nnz, "set_objective_n:<ind>" );
+  double* val = get_fa( v_val, nnz, "set_objective_n:<val>" );
+
+  int error = GRBsetobjectiven(model,
+			       index,
+			       priority,
+			       weight,
+			       abstol,
+			       reltol,
+			       name,
+			       constant,
+			       nnz,
+			       ind,
+			       val );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_set_objective_n_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 11 );
+  return gu_set_objective_n( v_args[0],
+			     v_args[1],
+			     v_args[2],
+			     v_args[3],
+			     v_args[4],
+			     v_args[5],
+			     v_args[6],
+			     v_args[7],
+			     v_args[8],
+			     v_args[9],
+			     v_args[10]
+			     );
+}
+

@@ -4,19 +4,40 @@ type fa = (float, float64_elt, c_layout) Array1.t
 type ca = (char, int8_unsigned_elt, c_layout) Array1.t
 type i32a = (int32, int32_elt, c_layout) Array1.t
 type env
+type model
 
 external empty_env : unit -> (env, int) result = "gu_empty_env"
 external set_int_param : env -> string -> int -> int = "gu_set_int_param"
+
+external set_int_model_param : model -> string -> int -> int
+  = "gu_set_int_model_param"
+
 external get_int_param : env -> string -> (int, int) result = "gu_get_int_param"
+
+external get_int_model_param : model -> string -> (int, int) result
+  = "gu_get_int_model_param"
+
 external set_str_param : env -> string -> string -> int = "gu_set_str_param"
+
+external set_str_model_param : model -> string -> string -> int
+  = "gu_set_str_model_param"
 
 external get_str_param : env -> string -> (string, int) result
   = "gu_get_str_param"
 
+external get_str_model_param : model -> string -> (string, int) result
+  = "gu_get_str_model_param"
+
 external set_float_param : env -> string -> float -> int = "gu_set_float_param"
+
+external set_float_model_param : model -> string -> float -> int
+  = "gu_set_float_model_param"
 
 external get_float_param : env -> string -> (float, int) result
   = "gu_get_float_param"
+
+external get_float_model_param : env -> string -> (float, int) result
+  = "gu_get_float_model_param"
 
 external start_env : env -> int = "gu_start_env"
 
@@ -24,8 +45,6 @@ external start_env : env -> int = "gu_start_env"
    [Invalid_argument err] as a result of array sizes that are inconsistent with
    other inputs. Similarly, the exception will be raised when the dimension of
    bigarrays is bigger than [1]. *)
-
-type model
 
 external new_model :
   env ->
@@ -56,6 +75,12 @@ external set_str_attr_element : model -> string -> int -> string -> int
 
 external get_str_attr_element : model -> string -> int -> (string, int) result
   = "gu_get_str_attr_element"
+
+external set_char_attr_element : model -> string -> int -> char -> int
+  = "gu_set_char_attr_element"
+
+external get_char_attr_element : model -> string -> int -> (char, int) result
+  = "gu_get_char_attr_element"
 
 external set_int_attr_element : model -> string -> int -> int -> int
   = "gu_set_int_attr_element"
@@ -118,3 +143,17 @@ external add_vars :
 external optimize : model -> int = "gu_optimize"
 external write : model -> string -> int = "gu_write"
 external compute_iis : model -> int = "gu_compute_iis"
+
+external set_objective_n :
+  model ->
+  int ->
+  int ->
+  float ->
+  float ->
+  float ->
+  string option ->
+  float ->
+  int ->
+  i32a ->
+  fa ->
+  int = "gu_set_objective_n_bc" "gu_set_objective_n"
