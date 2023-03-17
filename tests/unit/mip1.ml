@@ -3,9 +3,9 @@ open Raw
 open Utils
 open U
 
-let main key_path =
+let main () =
   let env = eer "empty_env" (empty_env ()) in
-  match Key.set env key_path with
+  match Params.read_and_set env with
   | Error msg ->
     print_endline msg;
     exit 1
@@ -70,11 +70,4 @@ let main key_path =
       pr "model is infeasible or unbounded\n"
     else pr "optimization stopped early\n"
 
-let _ =
-  let key_path_env_var = "GUROBI_ISV_KEY_PATH" in
-  try
-    let key_path = Unix.getenv key_path_env_var in
-    main key_path
-  with Not_found ->
-    pr "environment variable %S not found\n%!" key_path_env_var;
-    exit 1
+let () = main ()
