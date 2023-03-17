@@ -6,9 +6,11 @@ type t = {
 
 exception ParserError of string
 
-let read () =
+let read ?path () =
   try
-    let gurobi_params_file_path = Unix.getenv "GUROBI_PARAMS" in
+    let gurobi_params_file_path =
+      match path with Some p -> p | None -> Unix.getenv "GUROBI_PARAMS"
+    in
     let j = Yojson.Safe.from_file gurobi_params_file_path in
     match j with
     | `Assoc key_value_list ->
@@ -59,8 +61,8 @@ let read () =
        assume no params need to be set *)
     Ok { float_params = []; int_params = []; string_params = [] }
 
-let read_and_set env =
-  match read () with
+let read_and_set ?path env =
+  match read ?path () with
   | Error s -> Error s
   | Ok t -> (
     let failures = [] in

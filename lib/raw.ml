@@ -1,10 +1,35 @@
+(** Build and solve optimization models using Gurobi *)
+
+(** This interface largely follows the
+    {{:https://www.gurobi.com/documentation/current/refman/c_api_details.html}Gurobi's
+    C API}, with a few notable exceptions. First, the function names
+    use snake-case for legibility, and without the [GRB] prefix. So,
+    for example, the C function [GRBgetintparam] is exposed in this
+    interface as just [get_int_param]. Also, C functions names
+    containing [dbl] (to indicate that one of the arguments is a C
+    [double]) are translated to function names containing [float]. For
+    example, the C function [GRBgetdblattrelement] is represented here
+    as [get_float_attr_element]. The ordering of the arguments of the
+    C interface is largly preserved.
+
+    Note that all functions that take arrays or bigarrays ([float],
+    [char], and [int32]) as arguments may raise [Invalid_argument err]
+    as a result of array sizes that are inconsistent with other
+    inputs. Similarly, the exception will be raised when the dimension
+    of bigarrays is bigger than [1].
+*)
+
 open Bigarray
 
 type fa = (float, float64_elt, c_layout) Array1.t
 type ca = (char, int8_unsigned_elt, c_layout) Array1.t
 type i32a = (int32, int32_elt, c_layout) Array1.t
+
 type env
+(** Gurobi enviroment *)
+
 type model
+(** Gurobi model *)
 
 external empty_env : unit -> (env, int) result = "gu_empty_env"
 external set_int_param : env -> string -> int -> int = "gu_set_int_param"
@@ -40,11 +65,6 @@ external get_float_model_param : env -> string -> (float, int) result
   = "gu_get_float_model_param"
 
 external start_env : env -> int = "gu_start_env"
-
-(* note: all functions that take arrays or bigarrays as inputs may raise
-   [Invalid_argument err] as a result of array sizes that are inconsistent with
-   other inputs. Similarly, the exception will be raised when the dimension of
-   bigarrays is bigger than [1]. *)
 
 external new_model :
   env ->

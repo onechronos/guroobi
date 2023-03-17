@@ -97,6 +97,10 @@ let () =
   | Ok kvc_list ->
     let ch = open_out output_path in
     let pr x = Printf.fprintf ch x in
+    pr
+      "(** names and values associated with Gurobi parameters and attributes \
+       *)\n\n";
+
     (* There may be some duplicated define directives in the include file. Since
        we nevertheless add them to the OCaml file, the OCaml compiler may
        complain about unused values, and dune's setting of treating warnings as
