@@ -379,23 +379,27 @@ CAMLprim value gu_get_float_attr_array( value v_model, value v_name, value v_sta
   int start = Int_val( v_start );
   int len = Int_val( v_len );
 
-  long dims[1];
-  dims[0] = len;
-  v_array = caml_ba_alloc(CAML_BA_FLOAT64 | CAML_BA_C_LAYOUT, 1, NULL, dims);
-  double* array = get_fa( v_array, len, "get_float_attr_array:<result>" );
-  int error = GRBgetdblattrarray( model, name, start, len, array );
-
-  if ( error == 0 ) {
-    // Ok v_array
-    v_res = caml_alloc(1, 0);
-    Store_field( v_res, 0, v_array );
+  long ba_length = len - start;
+  if ( ba_length <= 0 ) {
+    caml_invalid_argument( "get_float_attr_array:(start,len)" );
   }
   else {
-    // Error code
-    v_res = caml_alloc(1, 1);
-    Store_field( v_res, 0, Val_int(error) );
+    v_array = caml_ba_alloc_dims(CAML_BA_FLOAT64 | CAML_BA_C_LAYOUT, 1, NULL, ba_length);
+    double* array = Caml_ba_data_val(v_array);
+    int error = GRBgetdblattrarray( model, name, start, len, array );
+
+    if ( error == 0 ) {
+      // Ok v_array
+      v_res = caml_alloc(1, 0);
+      Store_field( v_res, 0, v_array );
+    }
+    else {
+      // Error code
+      v_res = caml_alloc(1, 1);
+      Store_field( v_res, 0, Val_int(error) );
+    }
+    CAMLreturn( v_res );
   }
-  CAMLreturn( v_res );
 }
 
 // get int attribute array
@@ -408,23 +412,27 @@ CAMLprim value gu_get_int_attr_array( value v_model, value v_name, value v_start
   int start = Int_val( v_start );
   int len = Int_val( v_len );
 
-  long dims[1];
-  dims[0] = len;
-  v_array = caml_ba_alloc(CAML_BA_INT32 | CAML_BA_C_LAYOUT, 1, NULL, dims);
-  int* array = get_i32a( v_array, len, "get_int_attr_array:<output>" );
-  int error = GRBgetintattrarray( model, name, start, len, array );
-
-  if ( error == 0 ) {
-    // Ok v_array
-    v_res = caml_alloc(1, 0);
-    Store_field( v_res, 0, v_array );
+  long ba_length = len - start;
+  if ( ba_length <= 0 ) {
+    caml_invalid_argument( "get_int_attr_array:(start,len)" );
   }
   else {
-    // Error code
-    v_res = caml_alloc(1, 1);
-    Store_field( v_res, 0, Val_int(error) );
+    v_array = caml_ba_alloc_dims(CAML_BA_INT32 | CAML_BA_C_LAYOUT, 1, NULL, ba_length);
+    int* array = Caml_ba_data_val(v_array);
+    int error = GRBgetintattrarray( model, name, start, len, array );
+
+    if ( error == 0 ) {
+      // Ok v_array
+      v_res = caml_alloc(1, 0);
+      Store_field( v_res, 0, v_array );
+    }
+    else {
+      // Error code
+      v_res = caml_alloc(1, 1);
+      Store_field( v_res, 0, Val_int(error) );
+    }
+    CAMLreturn( v_res );
   }
-  CAMLreturn( v_res );
 }
 
 // get char attribute array
@@ -437,23 +445,27 @@ CAMLprim value gu_get_char_attr_array( value v_model, value v_name, value v_star
   int start = Int_val( v_start );
   int len = Int_val( v_len );
 
-  long dims[1];
-  dims[0] = len;
-  v_array = caml_ba_alloc(CAML_BA_CHAR | CAML_BA_C_LAYOUT, 1, NULL, dims);
-  char* array = get_ca( v_array, len, "get_char_attr:<output>" );
-  int error = GRBgetcharattrarray( model, name, start, len, array );
-
-  if ( error == 0 ) {
-    // Ok v_array
-    v_res = caml_alloc(1, 0);
-    Store_field( v_res, 0, v_array );
+  long ba_length = len - start;
+  if ( ba_length <= 0 ) {
+    caml_invalid_argument( "get_char_attr_array:(start,len)" );
   }
   else {
-    // Error code
-    v_res = caml_alloc(1, 1);
-    Store_field( v_res, 0, Val_int(error) );
+    v_array = caml_ba_alloc_dims(CAML_BA_CHAR | CAML_BA_C_LAYOUT, 1, NULL, ba_length);
+    char* array = Caml_ba_data_val(v_array);
+    int error = GRBgetcharattrarray( model, name, start, len, array );
+
+    if ( error == 0 ) {
+      // Ok v_array
+      v_res = caml_alloc(1, 0);
+      Store_field( v_res, 0, v_array );
+    }
+    else {
+      // Error code
+      v_res = caml_alloc(1, 1);
+      Store_field( v_res, 0, Val_int(error) );
+    }
+    CAMLreturn( v_res );
   }
-  CAMLreturn( v_res );
 }
 
 // get string attribute array
@@ -465,7 +477,8 @@ CAMLprim value gu_get_str_attr_array( value v_model, value v_name, value v_start
   const char* name = String_val( v_name );
   int start = Int_val( v_start );
   int len = Int_val( v_len );
-  char* array[len];
+  int c_len = len - start;
+  char** array = malloc( c_len * sizeof(char*) );
   int error = GRBgetstrattrarray( model, name, start, len, array );
   if ( error == 0 ) {
     // Ok v_array
@@ -481,6 +494,7 @@ CAMLprim value gu_get_str_attr_array( value v_model, value v_name, value v_start
     v_res = caml_alloc(1, 1);
     Store_field( v_res, 0, Val_int(error) );
   }
+  free(array);
   CAMLreturn( v_res );
 }
 
