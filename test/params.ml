@@ -65,6 +65,7 @@ let read_and_set ?path env =
   match read ?path () with
   | Error s -> Error s
   | Ok t -> (
+    let open Gurobi in
     let failures = [] in
     let failures =
       List.fold_left

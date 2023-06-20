@@ -1,4 +1,4 @@
 (tests
   (names diet mip1 workforce1 multiobj)
-  (libraries gurobi unix)
+  (libraries gurobi unix yojson)
 )
