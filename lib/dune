@@ -1,6 +1,6 @@
 (library
-  (name gurobi)
-  (public_name gurobi)
+  (name guroobi)
+  (public_name guroobi)
   (libraries unix)
   (foreign_stubs
     (language c)

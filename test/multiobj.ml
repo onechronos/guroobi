@@ -1,4 +1,4 @@
-open Gurobi
+open Guroobi
 open Raw
 open Utils
 open U

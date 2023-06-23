@@ -1,9 +1,9 @@
-open Gurobi
+open Guroobi
 open Raw
 open Utils
 open U
 
-let pr_name_and_value model j =
+let _pr_name_and_value model j =
   let x_j =
     eer "get_float_attr_element" (get_float_attr_element model GRB.dbl_attr_x j)
   in

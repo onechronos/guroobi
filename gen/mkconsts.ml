@@ -49,15 +49,6 @@ module PoundDefineLineParse = struct
     | [] -> None
 end
 
-(* here, we remove the trailing close comment string "*/". I can't figure out
-   how to remove it with the parse *)
-let remove_trailing_close_comment s =
-  let len = String.length s in
-  if len >= 2 then
-    if s.[len - 2] = '*' && s.[len - 1] = '/' then String.sub s 0 (len - 2)
-    else s
-  else s
-
 (* identify parameters beginning with GRB_ERROR_; the values associated with
    these keys are those returned by API functions. we identify them here in
    order to build a map from value (an integer) to a string that can be used in

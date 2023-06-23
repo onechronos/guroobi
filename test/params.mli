@@ -9,7 +9,7 @@ type t = {
       (** association list consisting of Gurobi param names and their corresponding string values *)
 }
 
-val read_and_set : ?path:string -> Gurobi.Raw.env -> (unit, string) result
+val read_and_set : ?path:string -> Guroobi.Raw.env -> (unit, string) result
 (** [read_and_set gurobi_env] looks for the [GUROBI_PARAMS] Unix
     environment variable. If it finds it, it interprets it as the path
     of a JSON-formatted file. It attempts to read and parse the
