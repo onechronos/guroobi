@@ -149,6 +149,17 @@ external add_constr :
   model -> int -> i32a -> fa -> char -> float -> string option -> int
   = "gu_add_constr_bc" "gu_add_constr"
 
+external add_q_constr :
+  model ->
+  (i32a * fa) option ->
+  i32a ->
+  i32a ->
+  fa ->
+  char ->
+  float ->
+  string option ->
+  int = "gu_add_q_constr_bc" "gu_add_q_constr"
+
 external add_vars :
   model ->
   int ->

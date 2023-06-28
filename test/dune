@@ -1,4 +1,4 @@
 (tests
-  (names diet mip1 workforce1 multiobj)
+  (names diet mip1 workforce1 multiobj qp)
   (libraries guroobi unix yojson)
 )
