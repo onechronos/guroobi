@@ -60,7 +60,8 @@ let main () =
      q_val.{2} <- -1.;
 
      az
-       (add_q_constr model None q_row q_col q_val GRB.less_equal 0. (Some "qc0")));
+       (add_q_constr model None num_nz q_row q_col q_val GRB.less_equal 0.
+          (Some "qc0")));
 
     (* rotated cone: x^2 <= yz *)
     (let num_nz = 2 in
@@ -75,7 +76,8 @@ let main () =
      q_col.{1} <- 2l;
      q_val.{1} <- -1.;
      az
-       (add_q_constr model None q_row q_col q_val GRB.less_equal 0. (Some "qc1")));
+       (add_q_constr model None num_nz q_row q_col q_val GRB.less_equal 0.
+          (Some "qc1")));
 
     az (optimize model);
 

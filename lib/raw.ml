@@ -151,7 +151,8 @@ external add_constr :
 
 external add_q_constr :
   model ->
-  (i32a * fa) option ->
+  (int * i32a * fa) option ->
+  int ->
   i32a ->
   i32a ->
   fa ->

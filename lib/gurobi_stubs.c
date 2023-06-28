@@ -1036,7 +1036,8 @@ CAMLprim value gu_add_constr_bc(value* v_args, int arg_n )
 
 CAMLprim value gu_add_q_constr(
  value v_model,
- value v_l_ind_val_pair_opt,
+ value v_l_numnz_ind_val_triple_opt,
+ value v_q_num_nz,
  value v_q_row,
  value v_q_col,
  value v_q_val,
@@ -1045,45 +1046,46 @@ CAMLprim value gu_add_q_constr(
  value v_constr_name_opt
 )
 {
-  CAMLparam5( v_model, v_l_ind_val_pair_opt, v_q_row, v_q_col, v_q_val );
-  CAMLxparam3( v_sense, v_rhs, v_constr_name_opt );
-  CAMLlocal4( v_l_ind_val_pair, v_l_ind, v_l_val, v_constr_name );
+  CAMLparam5( v_model, v_l_numnz_ind_val_triple_opt, v_q_num_nz, v_q_row, v_q_col );
+  CAMLxparam4( v_q_val, v_sense, v_rhs, v_constr_name_opt );
+  CAMLlocal5( v_l_numnz_ind_val_triple, v_l_num_nz, v_l_ind, v_l_val, v_constr_name );
 
   GRBmodel* model = model_val( v_model );
 
-  int num_linear_vars = 0;
+  int l_num_nz = 0;
   int* l_ind = NULL;
   double* l_val = NULL;
 
-  if (Is_some( v_l_ind_val_pair_opt )) {
+  if (Is_some( v_l_numnz_ind_val_triple_opt )) {
     // we have a linear component to the quadratic constraint
-    v_l_ind_val_pair = Some_val( v_l_ind_val_pair_opt );
-    v_l_ind = Field( v_l_ind_val_pair, 0 );
-    v_l_val = Field( v_l_ind_val_pair, 1 );    
+    v_l_numnz_ind_val_triple = Some_val( v_l_numnz_ind_val_triple_opt );
+    v_l_num_nz = Field( v_l_numnz_ind_val_triple, 0 );
+    v_l_ind = Field( v_l_numnz_ind_val_triple, 1 );
+    v_l_val = Field( v_l_numnz_ind_val_triple, 2 );
 
-    // v_l_ind and v_l_val must have the same length 
-    num_linear_vars = Caml_ba_array_val(v_l_ind)->dim[0];
-    l_ind = get_i32a( v_l_ind, num_linear_vars );
+    // v_l_ind and v_l_val must have minimum length of l_num_nz
+    l_num_nz = Int_val( v_l_num_nz );
+    l_ind = get_i32a( v_l_ind, l_num_nz );
     if ( l_ind == NULL ) {
       caml_invalid_argument( "add_q_constr::l_ind" );
     }
-    l_val = get_fa( v_l_val, num_linear_vars );
+    l_val = get_fa( v_l_val, l_num_nz );
     if ( l_val == NULL ) {
       caml_invalid_argument( "add_q_constr::l_val" );
     }
   }
 
-  // v_q_row, v_q_col, and v_q_val must have the same length
-  int num_quadratic_vars = Caml_ba_array_val(v_q_row)->dim[0];
-  int* q_row = get_i32a( v_q_row, num_quadratic_vars );
+  // v_q_row, v_q_col, and v_q_val must have minimum length q_num_nz
+  int q_num_nz = Int_val( v_q_num_nz );
+  int* q_row = get_i32a( v_q_row, q_num_nz );
   if ( q_row == NULL ) {
     caml_invalid_argument( "add_q_constr::q_row" );
   }
-  int* q_col = get_i32a( v_q_col, num_quadratic_vars );
+  int* q_col = get_i32a( v_q_col, q_num_nz );
   if ( q_col == NULL ) {
     caml_invalid_argument( "add_q_constr::q_col" );
   }
-  double* q_val = get_fa( v_q_val, num_quadratic_vars );
+  double* q_val = get_fa( v_q_val, q_num_nz );
   if ( q_val == NULL ) {
     caml_invalid_argument( "add_q_constr::q_val" );
   }
@@ -1098,10 +1100,10 @@ CAMLprim value gu_add_q_constr(
   }
 
   int error = GRBaddqconstr( model,
-			     num_linear_vars,
+			     l_num_nz,
 			     l_ind,
 			     l_val,
-			     num_quadratic_vars,
+			     q_num_nz,
 			     q_row,
 			     q_col,
 			     q_val,
@@ -1115,7 +1117,7 @@ CAMLprim value gu_add_q_constr(
 
 CAMLprim value gu_add_q_constr_bc(value* v_args, int arg_n )
 {
-  assert( arg_n == 8 );
+  assert( arg_n == 9 );
   return gu_add_q_constr( v_args[0],
 		          v_args[1],
   		          v_args[2],
@@ -1123,7 +1125,8 @@ CAMLprim value gu_add_q_constr_bc(value* v_args, int arg_n )
 			  v_args[4],
 			  v_args[5],
 			  v_args[6],
-			  v_args[7]
+			  v_args[7],
+			  v_args[8]
 			  );
 }
 
