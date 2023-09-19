@@ -19,6 +19,8 @@
  (description "a wrapper for Gurobi")
  (depends
   dune
+  re
+  bos
   (odoc :with-doc)
   (ocaml
    (>= "4.08"))))

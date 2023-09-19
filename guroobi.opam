@@ -9,6 +9,8 @@ homepage: "https://github.com/onechronos/guroobi"
 bug-reports: "https://github.com/onechronos/guroobi/issues"
 depends: [
   "dune" {>= "3.7"}
+  "re"
+  "bos"
   "odoc" {with-doc}
   "ocaml" {>= "4.08"}
 ]
