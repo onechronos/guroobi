@@ -21,6 +21,7 @@
   dune
   re
   bos
+  yojson
   (odoc :with-doc)
   (ocaml
    (>= "4.08"))))
