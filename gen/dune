@@ -1,1 +1,3 @@
-(executable (name mkconsts) (libraries bos re.pcre))
+(executable
+ (name mkconsts)
+ (libraries bos re.pcre))

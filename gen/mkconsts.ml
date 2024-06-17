@@ -1,4 +1,5 @@
-(** parse the Gurobi C API include file, to produce a similar OCaml source file with corresponding values *)
+(** parse the Gurobi C API include file, to produce a similar OCaml source file
+    with corresponding values *)
 
 (* in the include file we are seraching for lines with the following structure
 
@@ -17,10 +18,11 @@ module PoundDefineLineParse = struct
 
   let define str =
     try
-      let kv =
+      let ((key, _) as kv) =
         Scanf.sscanf str "#define GRB_%s %s" (fun key value -> (key, value))
       in
-      Some kv
+      (* Filter out this key, it leads to a duplicate definition *)
+      if key = "DBL_ATTR_Xn" then None else Some kv
     with Scanf.Scan_failure _ | End_of_file -> None
 
   (* here, we remove the trailing close comment string "*/". *)
@@ -37,15 +39,15 @@ module PoundDefineLineParse = struct
   let parse line =
     match split ~rex:open_comment_rex line with
     | before_open_comment :: after_open_comment :: _ -> (
-      match define before_open_comment with
-      | None -> None
-      | Some (k, v) ->
-        let comment = remove_close_comment after_open_comment in
-        Some (low k, v, Some comment))
+        match define before_open_comment with
+        | None -> None
+        | Some (k, v) ->
+            let comment = remove_close_comment after_open_comment in
+            Some (low k, v, Some comment))
     | [ no_comment ] -> (
-      match define no_comment with
-      | None -> None
-      | Some (k, v) -> Some (low k, v, None))
+        match define no_comment with
+        | None -> None
+        | Some (k, v) -> Some (low k, v, None))
     | [] -> None
 end
 
@@ -83,37 +85,37 @@ let () =
       [] (Fpath.v input_path)
   with
   | Error (`Msg msg) ->
-    print_endline msg;
-    exit 1
+      print_endline msg;
+      exit 1
   | Ok kvc_list ->
-    let ch = open_out output_path in
-    let pr x = Printf.fprintf ch x in
-    pr
-      "(** names and values associated with Gurobi parameters and attributes \
-       *)\n\n";
+      let ch = open_out output_path in
+      let pr x = Printf.fprintf ch x in
+      pr
+        "(** names and values associated with Gurobi parameters and attributes \
+         *)\n\n";
 
-    (* There may be some duplicated define directives in the include file. Since
-       we nevertheless add them to the OCaml file, the OCaml compiler may
-       complain about unused values, and dune's setting of treating warnings as
-       errors will yield compilation failures. By adding this compilation
-       attribute to the file, we override this treatment, so that warnings do
-       not trigger compilation errors. *)
-    pr "[@@@warnerror \"-32\"]\n";
+      (* There may be some duplicated define directives in the include file.
+         Since we nevertheless add them to the OCaml file, the OCaml compiler
+         may complain about unused values, and dune's setting of treating
+         warnings as errors will yield compilation failures. By adding this
+         compilation attribute to the file, we override this treatment, so that
+         warnings do not trigger compilation errors. *)
+      pr "[@@@warnerror \"-32\"]\n";
 
-    (* print a map (or rather, association list) from error codes to error
-       messages *)
-    let code_error_msg_assoc = error_map kvc_list in
-    pr "let code_error_msg_assoc = [\n";
-    List.iter
-      (fun (code, error_msg) -> pr "  %d, %S;\n" code error_msg)
-      code_error_msg_assoc;
-    pr "]\n";
+      (* print a map (or rather, association list) from error codes to error
+         messages *)
+      let code_error_msg_assoc = error_map kvc_list in
+      pr "let code_error_msg_assoc = [\n";
+      List.iter
+        (fun (code, error_msg) -> pr "  %d, %S;\n" code error_msg)
+        code_error_msg_assoc;
+      pr "]\n";
 
-    List.iter
-      (fun (k, v, c_opt) ->
-        (match c_opt with
-        | None -> ()
-        | Some comment -> pr "(* %s *)\n" comment);
-        pr "let %s = %s\n" k v)
-      kvc_list;
-    close_out ch
+      List.iter
+        (fun (k, v, c_opt) ->
+          (match c_opt with
+          | None -> ()
+          | Some comment -> pr "(* %s *)\n" comment);
+          pr "let %s = %s\n" k v)
+        kvc_list;
+      close_out ch

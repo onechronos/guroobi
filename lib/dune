@@ -1,16 +1,19 @@
 (library
-  (name guroobi)
-  (public_name guroobi)
-  (libraries unix)
-  (foreign_stubs
-    (language c)
-    (names gurobi_stubs)
-    (include_dirs "%{env:GUROBI_ROOT=/path/to/gurobi}/include")
-  )
-  (c_library_flags "-L %{env:GUROBI_ROOT=/path/to/gurobi}/lib" -lgurobi100)
-)
+ (name guroobi)
+ (public_name guroobi)
+ (libraries unix)
+ (foreign_stubs
+  (language c)
+  (names gurobi_stubs)
+  (include_dirs "%{env:GUROBI_ROOT=/path/to/gurobi}/include"))
+ (c_library_flags "-L %{env:GUROBI_ROOT=/path/to/gurobi}/lib" -lgurobi110))
 
 (rule
  (targets gRB.ml)
- (deps    (:gen ../gen/mkconsts.exe))
- (action  (run %{gen} %{env:GUROBI_ROOT=/path/to/gurobi}/include/gurobi_c.h %{targets})))
+ (deps
+  (:gen ../gen/mkconsts.exe))
+ (action
+  (run
+   %{gen}
+   %{env:GUROBI_ROOT=/path/to/gurobi}/include/gurobi_c.h
+   %{targets})))

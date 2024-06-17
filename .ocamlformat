@@ -1,3 +1,6 @@
-cases-exp-indent=2
-wrap-comments=true
-type-decl=sparse
+version = 0.26.2
+profile = conventional
+
+# Default overrides
+wrap-comments = true
+parse-docstrings = true
