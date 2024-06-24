@@ -3,6 +3,12 @@ open Raw
 open Utils
 open U
 
+(* Facility location: a company currently ships its product from 5 plants
+   to 4 warehouses. It is considering closing some plants to reduce
+   costs. What plant(s) should the company close, in order to minimize
+   transportation and fixed costs?
+ *)
+
 (* Number of plants and warehouses *)
 let n_plants = 5
 let n_warehouses = 4

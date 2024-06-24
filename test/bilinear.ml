@@ -3,10 +3,19 @@ open Raw
 open Utils
 open U
 
+(* This example formulates and solves the following simple bilinear model:
+
+     maximize    x
+     subject to  x + y + z <= 10
+                 x * y <= 2          (bilinear inequality)
+                 x * z + y * z == 1  (bilinear equality)
+                 x, y, z non-negative (x integral in second version)
+*)
+
 let main () =
 
   (* Create environment *)
-  
+
   let env = eer "empty_env" (empty_env ()) in
   match Params.read_and_set env with
   | Error msg ->
