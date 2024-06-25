@@ -206,6 +206,22 @@ external add_vars :
   name:string array option ->
   int = "gu_add_vars_bc" "gu_add_vars"
 
+external chg_coeffs :
+  model:model ->
+  num_chgs:int ->
+  c_ind:i32a ->
+  v_ind:i32a ->
+  value:fa ->
+  int = "gu_chg_coeffs"
+
+external add_q_p_terms :
+  model:model ->
+  num_qnz:int ->
+  q_row:i32a ->
+  q_col:i32a ->
+  q_val:fa ->
+  int = "gu_add_q_p_terms"
+
 external optimize : model -> int = "gu_optimize"
 external write : model:model -> path:string -> int = "gu_write"
 external compute_iis : model -> int = "gu_compute_iis"

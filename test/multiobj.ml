@@ -9,22 +9,14 @@ let budget = 12
 
 let set =
   [|
-    [| 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0 |];
-    [| 0; 0; 0; 0; 0; 1; 1; 1; 1; 1; 0; 0; 0; 0; 0; 1; 1; 1; 1; 1 |];
-    [| 0; 0; 0; 1; 1; 0; 1; 1; 0; 0; 0; 0; 0; 1; 1; 0; 1; 1; 0; 0 |];
-    [| 0; 0; 0; 1; 1; 1; 0; 0; 0; 1; 1; 1; 0; 0; 0; 1; 1; 1; 0; 0 |];
+    [| 1.; 1.; 1.; 1.; 1.; 1.; 1.; 1.; 1.; 1.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0.; 0. |];
+    [| 0.; 0.; 0.; 0.; 0.; 1.; 1.; 1.; 1.; 1.; 0.; 0.; 0.; 0.; 0.; 1.; 1.; 1.; 1.; 1. |];
+    [| 0.; 0.; 0.; 1.; 1.; 0.; 1.; 1.; 0.; 0.; 0.; 0.; 0.; 1.; 1.; 0.; 1.; 1.; 0.; 0. |];
+    [| 0.; 0.; 0.; 1.; 1.; 1.; 0.; 0.; 0.; 1.; 1.; 1.; 0.; 0.; 0.; 1.; 1.; 1.; 0.; 0. |];
   |]
 
 let set_obj_priority = [| 3; 2; 2; 1 |]
 let set_obj_weight = [| 1.; 0.25; 1.25; 1.0 |]
-
-let fa_of_array ia =
-  let n = Array.length ia in
-  let f = fa n in
-  for i = 0 to n - 1 do
-    f.{i} <- float ia.(i)
-  done;
-  f
 
 let pr = Printf.printf
 let sp = Printf.sprintf
@@ -79,7 +71,7 @@ let main () =
 
       for i = 0 to n_subsets - 1 do
         let name = sp "Set%d" (i + 1) in
-        let set_i = fa_of_array set.(i) in
+        let set_i = to_fa set.(i) in
         az
           (set_objective_n ~model ~index:i ~priority:set_obj_priority.(i)
              ~weight:set_obj_weight.(i)

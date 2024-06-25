@@ -1246,6 +1246,64 @@ CAMLprim value gu_add_vars(
 
 }
 
+CAMLprim value gu_chg_coeffs(
+ value v_model,
+ value v_num_chgs,
+ value v_c_ind,
+ value v_v_ind,
+ value v_val
+)
+{
+  CAMLparam5( v_model, v_num_chgs, v_c_ind, v_v_ind, v_val );
+
+  GRBmodel* model = model_val( v_model );
+  int num_chgs = Int_val( v_num_chgs );
+  int* c_ind = get_i32a( v_c_ind, num_chgs );
+  if ( c_ind == NULL ) {
+    caml_invalid_argument( "chg_coeffs:cind" );
+  }
+  int* v_ind = get_i32a( v_v_ind, num_chgs );
+  if ( v_ind == NULL ) {
+    caml_invalid_argument( "chg_coeffs:vind" );
+  }
+  double* val = get_fa( v_val, num_chgs );
+  if ( val == NULL ) {
+    caml_invalid_argument( "chg_coeffs:val" );
+  }
+
+  int error = GRBchgcoeffs( model, num_chgs, c_ind, v_ind, val );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_q_p_terms(
+ value v_model,
+ value v_num_qnz,
+ value v_q_row,
+ value v_q_col,
+ value v_q_val
+)
+{
+  CAMLparam5( v_model, v_num_qnz, v_q_row, v_q_col, v_q_val );
+
+  GRBmodel* model = model_val( v_model );
+  int num_qnz = Int_val( v_num_qnz );
+  int* q_row = get_i32a( v_q_row, num_qnz );
+  if ( q_row == NULL ) {
+    caml_invalid_argument( "add_q_p_terms:qrow" );
+  }
+  int* q_col = get_i32a( v_q_col, num_qnz );
+  if ( q_col == NULL ) {
+    caml_invalid_argument( "add_q_p_terms:qcol" );
+  }
+  double* q_val = get_fa( v_q_val, num_qnz );
+  if ( q_val == NULL ) {
+    caml_invalid_argument( "add_q_p_terms:qval" );
+  }
+
+  int error = GRBaddqpterms( model, num_qnz, q_row, q_col, q_val );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_add_vars_bc(value* v_args, int arg_n )
 {
   assert( arg_n == 8 );

@@ -1,3 +1,3 @@
 (tests
- (names diet mip1 workforce1 multiobj qcp bilinear facility)
+ (names diet mip1 workforce1 multiobj qcp bilinear facility multiscenario dense)
  (libraries guroobi unix yojson))

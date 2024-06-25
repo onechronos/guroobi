@@ -130,14 +130,8 @@ let main () =
 
       let csc = { num_nz = !idx; xbeg = c_beg; xind = c_ind; xval = c_val } in
 
-      let n = Array.length demand in
-      let fa_demand = fa n in
-      for i = 0 to n - 1 do
-        fa_demand.{i} <- demand.(i)
-      done;
-
       az
-        (add_constrs ~model ~num:n_warehouses ~matrix:(Some csc) ~sense ~rhs:fa_demand
+        (add_constrs ~model ~num:n_warehouses ~matrix:(Some csc) ~sense ~rhs:(to_fa demand)
            ~name:(Some cname));
 
       (* Guess at the starting point: close the plant with the highest
