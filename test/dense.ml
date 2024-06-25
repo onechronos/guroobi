@@ -3,6 +3,27 @@ open Raw
 open Utils
 open U
 
+(* This example formulates and solves the following simple QP model:
+
+     minimize    x + y + x^2 + x*y + y^2 + y*z + z^2
+     subject to  x + 2 y + 3 z >= 4
+                 x +   y       >= 1
+                 x, y, z non-negative
+
+   The example illustrates the use of dense matrices to store A and Q
+   (and dense vectors for the other relevant data).  We don't recommend
+   that you use dense matrices, but this example may be helpful if you
+   already have your data in this format.
+*)
+
+(*
+  Solve an LP/QP/MILP/MIQP represented using dense matrices.  This
+  routine assumes that A and Q are both stored in row-major order.
+  It returns 1 if the optimization succeeds.  When successful,
+  it returns the optimal objective value in 'objvalP', and the
+  optimal solution vector in 'solution'.
+*)
+
 let c = [|1.; 1.; 0.|]
 
 let q =   [|
@@ -36,7 +57,7 @@ let main () =
       az (set_int_param ~env ~name:GRB.int_par_outputflag ~value:0);
       az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"dense.log");
       az (start_env env);
-
+      (* Create an empty model *)
       let model =
         eer "new_model"
           (new_model ~env ~name:(Some "dense") ~num_vars:cols ~objective:(Some (to_fa c))
@@ -47,6 +68,8 @@ let main () =
         (add_constrs ~model ~num:rows ~matrix:None ~sense:(to_ca sense)
            ~rhs:(to_fa rhs) ~name:None);
       
+      (* Populate A matrix *)
+
       for i = 0 to rows - 1 do
         for j = 0 to cols - 1 do
           if a.(i).(j) <> 0. then
@@ -60,6 +83,8 @@ let main () =
             az (chg_coeffs ~model ~num_chgs ~c_ind ~v_ind ~value)
         done
       done;
+
+      (* Populate Q matrix *)
 
       for i = 0 to cols - 1 do
         for j = 0 to cols - 1 do
@@ -75,8 +100,12 @@ let main () =
         done
       done;
       
+      (* Optimize model *)
+
       az (optimize model);
       az (write ~model ~path:"dense.lp");
+
+      (* Capture solution information *)
 
       let status =
         eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
