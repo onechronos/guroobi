@@ -363,7 +363,25 @@ CAMLprim value gu_get_float_model_param( value v_model, value v_name )
   CAMLreturn( v_res );
 }
 
-// get float attribute array
+// get and set float attribute array
+CAMLprim value gu_set_float_attr_array(
+  value v_model, 
+  value v_name,
+  value v_start, 
+  value v_len, 
+  value v_values 
+)
+{
+  CAMLparam5( v_model, v_name, v_start, v_len, v_values );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int start = Int_val(v_start);
+  int len = Int_val(v_len);
+  double* values = Caml_ba_data_val(v_values);
+  int error = GRBsetdblattrarray( model, name, start, len, values );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_get_float_attr_array( value v_model, value v_name, value v_start, value v_len )
 {
   CAMLparam4( v_model, v_name, v_start, v_len );
@@ -396,7 +414,25 @@ CAMLprim value gu_get_float_attr_array( value v_model, value v_name, value v_sta
   }
 }
 
-// get int attribute array
+// set and get int attribute array
+CAMLprim value gu_set_int_attr_array(
+  value v_model, 
+  value v_name,
+  value v_start, 
+  value v_len, 
+  value v_values 
+)
+{
+  CAMLparam5( v_model, v_name, v_start, v_len, v_values );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int start = Int_val(v_start);
+  int len = Int_val(v_len);
+  int* values = Caml_ba_data_val(v_values);
+  int error = GRBsetintattrarray( model, name, start, len, values );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_get_int_attr_array( value v_model, value v_name, value v_start, value v_len )
 {
   CAMLparam4( v_model, v_name, v_start, v_len );
@@ -429,7 +465,26 @@ CAMLprim value gu_get_int_attr_array( value v_model, value v_name, value v_start
   }
 }
 
-// get char attribute array
+// set and get char attribute array
+
+CAMLprim value gu_set_char_attr_array(
+  value v_model, 
+  value v_name,
+  value v_start, 
+  value v_len, 
+  value v_values 
+)
+{
+  CAMLparam5( v_model, v_name, v_start, v_len, v_values );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int start = Int_val(v_start);
+  int len = Int_val(v_len);
+  char* values = Caml_ba_data_val(v_values);
+  int error = GRBsetcharattrarray( model, name, start, len, values );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_get_char_attr_array( value v_model, value v_name, value v_start, value v_len )
 {
   CAMLparam4( v_model, v_name, v_start, v_len );

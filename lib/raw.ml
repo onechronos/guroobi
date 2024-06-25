@@ -134,13 +134,25 @@ external set_int_attr : model:model -> name:string -> value:int -> int
 external get_int_attr : model:model -> name:string -> (int, int) result
   = "gu_get_int_attr"
 
+external set_float_attr_array :
+  model:model -> name:string -> start:int -> len:int -> values:fa -> int
+  = "gu_set_float_attr_array"
+
 external get_float_attr_array :
   model:model -> name:string -> start:int -> len:int -> (fa, int) result
   = "gu_get_float_attr_array"
 
+external set_int_attr_array :
+  model:model -> name:string -> start:int -> len:int -> values:i32a -> int
+  = "gu_set_int_attr_array"
+
 external get_int_attr_array :
   mmodel:model -> name:string -> start:int -> len:int -> (i32a, int) result
   = "gu_get_int_attr_array"
+
+external set_char_attr_array :
+  model:model -> name:string -> start:int -> len:int -> values:ca -> int
+  = "gu_set_char_attr_array"
 
 external get_char_attr_array :
   model:model -> name:string -> start:int -> len:int -> (ca, int) result
