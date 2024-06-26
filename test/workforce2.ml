@@ -161,7 +161,7 @@ let main () =
           else if status = GRB.optimal then (
             pr "\nThe following constraints were removed to get a feasible LP:\n";
             for i = 0 to (List.length !removed) - 1 do
-              pr "%s " (List.nth !removed i)
+              pr "%s " (List.nth (List.rev !removed) i)
             done;
             pr "\n"
           ) else if status <> GRB.inf_or_unbd && status <> GRB.infeasible then
