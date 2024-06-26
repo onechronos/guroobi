@@ -211,6 +211,16 @@ external add_q_constr :
   name:string option ->
   int = "gu_add_q_constr_bc" "gu_add_q_constr"
 
+  external feas_relax :
+  model:model ->
+  relax_obj_type:int ->
+  min_relax:int ->
+  lb_pen:fa option ->
+  ub_pen:fa option ->
+  rhs_pen:fa option ->
+  feas_obf_p:fa option ->
+  int = "gu_feas_relax_bc" "gu_feas_relax"
+
 external add_vars :
   model:model ->
   num_vars:int ->

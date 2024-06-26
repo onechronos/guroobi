@@ -377,7 +377,7 @@ CAMLprim value gu_set_float_attr_array(
   const char* name = String_val(v_name);
   int start = Int_val(v_start);
   int len = Int_val(v_len);
-  double* values = Caml_ba_data_val(v_values);
+  double* values = get_fa(v_values, len);
   int error = GRBsetdblattrarray( model, name, start, len, values );
   CAMLreturn( Val_int( error ) );
 }
@@ -428,7 +428,7 @@ CAMLprim value gu_set_int_attr_array(
   const char* name = String_val(v_name);
   int start = Int_val(v_start);
   int len = Int_val(v_len);
-  int* values = Caml_ba_data_val(v_values);
+  int* values = get_i32a(v_values, len);
   int error = GRBsetintattrarray( model, name, start, len, values );
   CAMLreturn( Val_int( error ) );
 }
@@ -480,7 +480,7 @@ CAMLprim value gu_set_char_attr_array(
   const char* name = String_val(v_name);
   int start = Int_val(v_start);
   int len = Int_val(v_len);
-  char* values = Caml_ba_data_val(v_values);
+  char* values = get_ca(v_values, len);
   int error = GRBsetcharattrarray( model, name, start, len, values );
   CAMLreturn( Val_int( error ) );
 }
@@ -1048,7 +1048,7 @@ CAMLprim value gu_del_constrs(
   CAMLparam3( v_model, v_num_del, v_ind );
   GRBmodel* model = model_val(v_model);
   int num_del = Int_val(v_num_del);
-  int* ind = Caml_ba_data_val(v_ind);
+  int* ind = get_i32a(v_ind, num_del);
   int error = GRBdelconstrs( model, num_del, ind );
   CAMLreturn( Val_int( error ) );
 }
@@ -1196,6 +1196,70 @@ CAMLprim value gu_add_q_constr_bc(value* v_args, int arg_n )
 			  v_args[6],
 			  v_args[7],
 			  v_args[8]
+			  );
+}
+
+CAMLprim value gu_feas_relax(
+  value v_model, 
+  value v_relax_obj_type,
+  value v_min_relax,
+  value v_lb_pen_opt,
+  value v_ub_pen_opt,
+  value v_rhs_pen_opt,
+  value v_feas_obf_p_opt
+)
+{
+  CAMLparam5( v_model, v_relax_obj_type, v_min_relax, v_lb_pen_opt, v_ub_pen_opt );
+  CAMLxparam2( v_rhs_pen_opt, v_feas_obf_p_opt );
+  CAMLlocal4( v_lb_pen, v_ub_pen, v_rhs_pen, v_feas_obf_p );
+  GRBmodel* model = model_val(v_model);
+  int relax_obj_type = Int_val(v_relax_obj_type);
+  int min_relax = Int_val(v_min_relax);
+
+  double* lb_pen = NULL;
+  if ( Is_some( v_lb_pen_opt ) ) {
+    v_lb_pen = Some_val( v_lb_pen_opt );
+    lb_pen = get_fa( v_lb_pen, min_relax );
+  }
+
+  double* ub_pen = NULL;
+  if ( Is_some( v_ub_pen_opt ) ) {
+    v_ub_pen = Some_val( v_ub_pen_opt );
+    ub_pen = get_fa( v_ub_pen, min_relax );
+  }
+
+  double* rhs_pen = NULL;
+  if ( Is_some( v_rhs_pen_opt ) ) {
+    v_rhs_pen = Some_val( v_rhs_pen_opt );
+    rhs_pen = get_fa( v_rhs_pen, min_relax );
+  }
+
+  double* feas_obf_p = NULL;
+  if ( Is_some( v_feas_obf_p_opt ) ) {
+    v_feas_obf_p = Some_val( v_feas_obf_p_opt );
+    feas_obf_p = get_fa( v_feas_obf_p, min_relax );
+  }
+
+  int error = GRBfeasrelax( model,
+    relax_obj_type,
+    min_relax, lb_pen,
+    ub_pen,
+    rhs_pen,
+    feas_obf_p 
+  );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_feas_relax_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 7 );
+  return gu_feas_relax( v_args[0],
+		          v_args[1],
+  		          v_args[2],
+		          v_args[3],
+			  v_args[4],
+			  v_args[5],
+			  v_args[6]
 			  );
 }
 
