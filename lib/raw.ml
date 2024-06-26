@@ -185,6 +185,10 @@ external add_constrs :
   name:string array option ->
   int = "gu_add_constrs_bc" "gu_add_constrs"
 
+external del_constrs :
+  model:model -> num_del:int -> ind:i32a -> int
+  = "gu_del_constrs"
+
 external add_constr :
   model:model ->
   num_nz:int ->

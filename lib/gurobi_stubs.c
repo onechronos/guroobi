@@ -1039,6 +1039,20 @@ CAMLprim value gu_add_constrs_bc(value* v_args, int arg_n )
 			 );
 }  
 
+CAMLprim value gu_del_constrs(
+  value v_model, 
+  value v_num_del,
+  value v_ind
+)
+{
+  CAMLparam3( v_model, v_num_del, v_ind );
+  GRBmodel* model = model_val(v_model);
+  int num_del = Int_val(v_num_del);
+  int* ind = Caml_ba_data_val(v_ind);
+  int error = GRBdelconstrs( model, num_del, ind );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_add_constr(
  value v_model,
  value v_num_nz,
