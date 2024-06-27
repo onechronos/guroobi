@@ -1263,6 +1263,78 @@ CAMLprim value gu_feas_relax_bc(value* v_args, int arg_n )
 			  );
 }
 
+CAMLprim value gu_add_var(
+ value v_model,
+ value v_num_nz,
+ value v_v_ind_opt,
+ value v_v_val_opt,
+ value v_obj,
+ value v_lb,
+ value v_ub,
+ value v_v_type,
+ value v_var_name_opt
+)
+{
+  CAMLparam5( v_model, v_num_nz, v_v_ind_opt, v_v_val_opt, v_obj );
+  CAMLxparam4( v_lb, v_ub, v_v_type, v_var_name_opt );
+  CAMLlocal3( v_v_ind, v_v_val, v_var_name );
+
+
+  GRBmodel* model = model_val( v_model );
+  int num_nz = Int_val( v_num_nz );
+
+  int* v_ind = NULL;
+  if ( Is_some( v_v_ind_opt ) ) {
+    v_v_ind = Some_val( v_v_ind_opt );
+    v_ind = get_i32a( v_v_ind, num_nz );
+  }
+
+  double* v_val = NULL;
+  if ( Is_some( v_v_val_opt ) ) {
+    v_v_val = Some_val( v_v_val_opt );
+    v_val = get_fa( v_v_val, num_nz );
+  }
+
+  double obj = Double_val(v_obj);
+  double lb = Double_val(v_lb);
+  double ub = Double_val(v_ub);
+  char v_type = (char)Int_val(v_v_type);
+
+  const char* var_name = NULL;
+  if ( Is_some( v_var_name_opt ) ) {
+    v_var_name = Some_val( v_var_name_opt );
+    var_name = String_val( v_var_name );
+  }
+
+  int error = GRBaddvar( model,
+			  num_nz,
+			  v_ind,
+			  v_val,
+			  obj,
+			  lb,
+			  ub,
+			  v_type,
+        var_name);
+
+  CAMLreturn( Val_int( error ) );
+
+}
+
+CAMLprim value gu_add_var_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 9 );
+  return gu_add_var( v_args[0],
+		      v_args[1],
+		      v_args[2],
+		      v_args[3],
+		      v_args[4],
+		      v_args[5],
+		      v_args[6],
+		      v_args[7],
+          v_args[8]
+		      );
+}
+
 CAMLprim value gu_add_vars(
  value v_model,
  value v_num_vars,

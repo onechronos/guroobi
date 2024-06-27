@@ -51,13 +51,13 @@ let main () =
       print_endline msg;
       exit 1
   | Ok () ->
-      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"workforce2.log");
+      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"workforce3.log");
       az (set_int_param ~env ~name:GRB.int_par_outputflag ~value:0);
 
       az (start_env env);
       let model =
         eer "new_mode"
-          (new_model ~env ~name:(Some "workforce2")
+          (new_model ~env ~name:(Some "workforce3")
              ~num_vars:(n_workers * n_shifts) ~objective:None ~lower_bound:None
              ~upper_bound:None ~var_type:None ~var_name:None)
       in
@@ -98,12 +98,9 @@ let main () =
         done
       done;
       assert (!idx = num_nz);
-      let shift_requirements : fa =
-        Bigarray.(Array1.of_array float64 c_layout shift_requirements)
-      in
       az
         (add_constrs ~model ~num:n_shifts ~matrix:(Some compressed) ~sense
-           ~rhs:shift_requirements ~name:(Some shifts));
+           ~rhs:(to_fa shift_requirements) ~name:(Some shifts));
 
       az (optimize model);
       let status =

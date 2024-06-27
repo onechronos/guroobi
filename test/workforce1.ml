@@ -98,12 +98,9 @@ let main () =
         done
       done;
       assert (!idx = num_nz);
-      let shift_requirements : fa =
-        Bigarray.(Array1.of_array float64 c_layout shift_requirements)
-      in
       az
         (add_constrs ~model ~num:n_shifts ~matrix:(Some compressed) ~sense
-           ~rhs:shift_requirements ~name:(Some shifts));
+           ~rhs:(to_fa shift_requirements) ~name:(Some shifts));
 
       az (optimize model);
       let status =
