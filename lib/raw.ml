@@ -211,6 +211,52 @@ external add_q_constr :
   name:string option ->
   int = "gu_add_q_constr_bc" "gu_add_q_constr"
 
+external add_gen_constr_min :
+  model:model ->
+  name:string option ->
+  res_var:int ->
+  n_vars:int ->
+  vars:i32a ->
+  constant:float ->
+  int = "gu_add_gen_constr_min_bc" "gu_add_gen_constr_min"
+
+external add_gen_constr_max :
+  model:model ->
+  name:string option ->
+  res_var:int ->
+  n_vars:int ->
+  vars:i32a ->
+  constant:float ->
+  int = "gu_add_gen_constr_max_bc" "gu_add_gen_constr_max"
+
+external add_gen_constr_and :
+  model:model ->
+  name:string option ->
+  res_var:int ->
+  n_vars:int ->
+  vars:i32a ->
+  int = "gu_add_gen_constr_and"
+
+external add_gen_constr_or :
+  model:model ->
+  name:string option ->
+  res_var:int ->
+  n_vars:int ->
+  vars:i32a ->
+  int = "gu_add_gen_constr_or"
+
+external add_gen_constr_indicator :
+  model:model ->
+  name:string option ->
+  bin_var:int ->
+  bin_val:int ->
+  n_vars:int ->
+  ind:i32a option ->
+  value:fa option ->
+  sense:char ->
+  rhs:float ->
+  int = "gu_add_gen_constr_indicator_bc" "gu_add_gen_constr_indicator"
+
   external feas_relax :
   model:model ->
   relax_obj_type:int ->

@@ -4,7 +4,7 @@ open Utils
 open U
 
 let n_shifts = 14
-let n_workers = 7
+let n_workers = 8
 
 let shifts =
   [|
@@ -24,7 +24,7 @@ let shifts =
     "Sun14";
   |]
 
-let workers = [| "Amy"; "Bob"; "Cathy"; "Dan"; "Ed"; "Fred"; "Gu" |]
+let workers = [| "Amy"; "Bob"; "Cathy"; "Dan"; "Ed"; "Fred"; "Gu"; "Tobi" |]
 
 let shift_requirements =
   [| 3.; 2.; 4.; 4.; 5.; 6.; 5.; 2.; 2.; 3.; 4.; 6.; 7.; 5. |]
@@ -37,6 +37,7 @@ let availability =
     [| 0.; 1.; 1.; 0.; 1.; 1.; 0.; 1.; 1.; 1.; 1.; 1.; 1.; 1. |];
     [| 1.; 1.; 1.; 1.; 1.; 0.; 1.; 1.; 1.; 0.; 1.; 0.; 1.; 1. |];
     [| 1.; 1.; 1.; 0.; 0.; 1.; 0.; 1.; 1.; 0.; 0.; 1.; 1.; 1. |];
+    [| 0.; 1.; 1.; 1.; 0.; 1.; 1.; 0.; 1.; 1.; 1.; 0.; 1.; 1. |];
     [| 1.; 1.; 1.; 0.; 1.; 1.; 1.; 1.; 1.; 1.; 1.; 1.; 1.; 1. |];
   |]
 
@@ -44,8 +45,8 @@ let xcol w s = (n_shifts * w) + s
 let slack_col s = n_shifts * n_workers + s
 let tot_slack_col = n_shifts * (n_workers + 1)
 let tot_shifts_col w = n_shifts * (n_workers + 1) + 1 + w
-let avg_shifts_col = (n_shifts+1)*(n_workers+1)
-let diff_shifts_col w = (n_shifts+1)*(n_workers+1)+1+w
+let min_shift_col = (n_shifts+1)*(n_workers+1)
+let max_shift_col = (n_shifts+1)*(n_workers+1)+1
 
 let main () =
   let env = eer "empty_env" (empty_env ()) in
@@ -54,14 +55,14 @@ let main () =
       print_endline msg;
       exit 1
   | Ok () ->
-      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"workforce4.log");
+      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"workforce5.log");
       az (set_int_param ~env ~name:GRB.int_par_outputflag ~value:0);
 
       az (start_env env);
       let model =
         eer "new_model"
-          (new_model ~env ~name:(Some "workforce4")
-             ~num_vars:((n_workers+1) * (n_shifts+1)) ~objective:None ~lower_bound:None
+          (new_model ~env ~name:(Some "workforce5")
+             ~num_vars:((n_workers+1) * (n_shifts+1) + 2) ~objective:None ~lower_bound:None
              ~upper_bound:None ~var_type:None ~var_name:None)
       in
 
@@ -93,10 +94,8 @@ let main () =
         az (set_str_attr_element ~model ~name:"VarName" ~index:(tot_shifts_col w) ~value:vname);
       done;
 
-      az (set_int_attr ~model ~name:GRB.int_attr_modelsense ~value:GRB.minimize);
-
-      az (set_float_attr_element ~model ~name:"Obj" ~index:tot_slack_col ~value:1.0);
-
+      az (set_str_attr_element ~model ~name:"VarName" ~index:min_shift_col ~value:"minShifts");
+      az (set_str_attr_element ~model ~name:"VarName" ~index:max_shift_col ~value:"maxShifts");
 
       let sense = ca n_shifts in
 
@@ -152,6 +151,31 @@ let main () =
         az (add_constr ~model ~num_nz:!idx ~var_index:cind ~nz:cval ~sense:GRB.equal ~rhs:0.0 ~name:(Some cname))
       done;
 
+      for w = 0 to n_workers - 1 do
+        cind.{w} <- Int32.of_int (tot_shifts_col w)
+      done;
+      az (add_gen_constr_min ~model ~name:None ~res_var:min_shift_col 
+        ~n_vars:n_workers ~vars:cind ~constant:GRB.infinity);
+      az (add_gen_constr_max ~model ~name:None ~res_var:max_shift_col 
+        ~n_vars:n_workers ~vars:cind ~constant:(-.GRB.infinity));
+
+      az (set_int_attr ~model ~name:GRB.int_attr_modelsense ~value:GRB.minimize);
+
+      cind.{0} <- Int32.of_int tot_slack_col;
+      cval.{0} <- 1.0;
+      az (set_objective_n ~model ~index:0 ~priority:2 ~weight:1.0 ~abs_tol:2.0 ~rel_tol:0.10
+        ~name:(Some "TotalSlack") ~constant:0.0 ~num_nz:1 ~var_index:cind ~nz:cval);
+      
+      cind.{0} <- Int32.of_int max_shift_col;
+      cval.{0} <- 1.0;
+      cind.{1} <- Int32.of_int min_shift_col;
+      cval.{1} <- -1.0;
+      az (set_objective_n ~model ~index:1 ~priority:1 ~weight:1.0 ~abs_tol:0.0 ~rel_tol:0.0
+        ~name:(Some "Fairness") ~constant:0.0 ~num_nz:2 ~var_index:cind ~nz:cval);
+
+      az (write ~model ~path:"workforce5.lp");
+      az (write ~model ~path:"workforce5.mps");
+      
       az (optimize model);
       let status =
         eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
@@ -175,73 +199,6 @@ let main () =
           in
           pr "%s worked %f shifts\n" workers.(w) sol
         done;
-        
-        az (set_float_attr_element ~model ~name:"UB" ~index:tot_slack_col ~value:sol);
-        az (set_float_attr_element ~model ~name:"LB" ~index:tot_slack_col ~value:sol);
-        
-        az (add_var ~model ~num_nz:0 ~v_ind:None ~v_val:None ~obj:0.0 ~lb:0.0 ~ub:GRB.infinity ~v_type:GRB.continuous ~var_name:( Some "avgShifts"));
-        
-        az (add_vars ~model ~num_vars:n_workers ~matrix:None ~objective:None ~lower_bound:None ~upper_bound:None ~var_type:None ~name:None);
-        
-        for w = 0 to n_workers - 1 do
-          let vname = Printf.sprintf "%sDiff" workers.(w) in
-          az (set_str_attr_element ~model ~name:"VarName" ~index:(diff_shifts_col w) ~value:vname);
-          az (set_float_attr_element ~model ~name:"LB" ~index:(diff_shifts_col w) ~value:(-.GRB.infinity))
-        done;
-        
-        let idx = ref 0 in
-        for w = 0 to n_workers - 1 do
-          cind.{!idx} <- Int32.of_int (tot_shifts_col w);
-          cval.{!idx} <- 1.0;
-          incr idx
-        done;
-        cind.{!idx} <- Int32.of_int avg_shifts_col;
-        cval.{!idx} <- float_of_int (-n_workers);
-        incr idx;
-        az (add_constr ~model ~num_nz:(!idx) ~var_index:cind ~nz:cval ~sense:GRB.equal ~rhs:0.0 ~name:(Some "avgShifts"));
-        
-        for w = 0 to n_workers - 1 do
-          cind.{0} <- Int32.of_int (tot_shifts_col w);
-          cval.{0} <- 1.0;
-          cind.{1} <- Int32.of_int avg_shifts_col;
-          cval.{1} <- -1.0;
-          cind.{2} <- Int32.of_int (diff_shifts_col w);
-          cval.{2} <- -1.0;
-        
-          let cname = Printf.sprintf "%sDiff" workers.(w) in
-          az (add_constr ~model ~num_nz:3 ~var_index:cind ~nz:cval ~sense:GRB.equal ~rhs:0.0 ~name:(Some cname))
-        done;
-        
-        az (set_float_attr_element ~model ~name:"Obj" ~index:tot_slack_col ~value:0.0);
-        
-        for w = 0 to n_workers - 1 do
-          cind.{w} <- Int32.of_int (diff_shifts_col w);
-          cval.{w} <- 1.0
-        done;
-        
-        az (add_q_p_terms ~model ~num_qnz:n_workers ~q_row:cind ~q_col:cind ~q_val:cval);
-        
-        az (optimize model);
-        let status =
-          eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
-        in
-        if status = GRB.inf_or_unbd || status = GRB.infeasible || status = GRB.unbounded then
-          pr "the model cannot be solved because it is infeasible or unbounded\n"
-        else if status <> GRB.optimal then
-          Printf.printf "optimization was stopped with status %d\n" status
-        else (
-          let sol =
-            eer "get_float_attr_element" (get_float_attr_element ~model ~name:"X" ~index:tot_slack_col)
-          in
-          pr "\nTotal slack required: %f\n" sol;
-        
-          for w = 0 to n_workers - 1 do
-            let sol =
-              eer "get_float_attr_element" (get_float_attr_element ~model ~name:"X" ~index:(tot_shifts_col w))
-            in
-            pr "%s worked %f shifts\n" workers.(w) sol
-          done
-        );
         pr "\n"
       )
       
