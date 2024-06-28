@@ -9,19 +9,19 @@ let dim = sub_dim * sub_dim
 let main () =
 
   (* Create environment *)
-  
+
   let env = eer "empty_env" (empty_env ()) in
   match Params.read_and_set env with
   | Error msg ->
       print_endline msg;
-      exit 0
+      exit 1
   | Ok () ->
     let filename = "data/sudoku1" in
     let in_channel =
       try open_in filename
       with Sys_error _ ->
         pr "Error: unable to open input file %s\n" filename;
-        exit 0
+        exit 1
     in
     let board = Array.make_matrix dim dim (-1) in
     for i = 0 to dim - 1 do
@@ -29,7 +29,7 @@ let main () =
         let inputline = input_line in_channel in
         if String.length inputline < 9 then begin
           pr "Error: not enough board positions specified";
-          exit 0
+          exit 1
         end;
         for j = 0 to dim - 1 do
           let char_value = (Char.code inputline.[j]) - (Char.code '1') in
@@ -40,7 +40,7 @@ let main () =
         done
       with End_of_file ->
         pr "Error: unexpected end of file";
-        exit 0
+        exit 1
     done;
   
     close_in in_channel;
