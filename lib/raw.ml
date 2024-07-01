@@ -375,3 +375,11 @@ external set_objective_n :
   var_index:i32a ->
   nz:fa ->
   int = "gu_set_objective_n_bc" "gu_set_objective_n"
+
+external set_pwl_obj :
+  model:model ->
+  var:int ->
+  n_points:int ->
+  x:fa ->
+  y:fa ->
+  int = "gu_set_pwl_obj"

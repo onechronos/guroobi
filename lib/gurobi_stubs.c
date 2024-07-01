@@ -2020,3 +2020,22 @@ CAMLprim value gu_set_objective_n_bc(value* v_args, int arg_n )
 			     );
 }
 
+CAMLprim value gu_set_pwl_obj(
+  value v_model,
+  value v_var,
+  value	v_n_points,
+  value v_x,
+  value	v_y
+)
+{
+  CAMLparam5( v_model, v_var, v_n_points, v_x, v_y );
+
+  GRBmodel* model = model_val( v_model );
+  int var = Int_val( v_var );
+  int n_points = Int_val( v_n_points );
+  double* x = get_fa( v_x, n_points );
+  double* y = get_fa( v_y, n_points );
+
+  int error = GRBsetpwlobj(model, var, n_points, x, y);
+  CAMLreturn( Val_int( error ) );
+}
