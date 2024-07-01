@@ -1215,6 +1215,46 @@ CAMLprim value gu_add_q_constr_bc(value* v_args, int arg_n )
 			  );
 }
 
+CAMLprim value gu_add_sos(
+ value v_model,
+ value v_num_sos,
+ value v_num_members,
+ value v_types,
+ value v_beg,
+ value v_ind,
+ value v_weight
+)
+{
+  CAMLparam5( v_model, v_num_sos, v_num_members, v_types, v_beg );
+  CAMLxparam2( v_ind, v_weight );
+
+  GRBmodel* model = model_val( v_model );
+
+  int num_sos = Int_val( v_num_sos );
+  int num_members = Int_val( v_num_members );
+  int* types = get_i32a( v_types, num_sos );
+  int* beg = get_i32a( v_beg, num_sos );
+  int* ind = get_i32a( v_ind, num_members );
+  double* weight = get_fa( v_weight, num_members );
+
+  int error = GRBaddsos(model, num_sos, num_members, types, beg, ind, weight);
+  CAMLreturn( Val_int( error ) );
+
+}
+
+CAMLprim value gu_add_sos_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 7 );
+  return gu_add_sos( v_args[0],
+        v_args[1],
+        v_args[2],
+        v_args[3],
+			  v_args[4],
+			  v_args[5],
+			  v_args[6]
+			  );
+}
+
 CAMLprim value gu_add_gen_constr_min(
  value v_model,
  value v_name_opt,

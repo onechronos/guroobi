@@ -1,7 +1,7 @@
 (tests
  (names diet mip1 workforce1 multiobj qcp bilinear facility 
   multiscenario dense qp poolsearch workforce2 workforce3 workforce4
-  workforce5 genconstr sudoku fixanddive gc_pwl_func)
+  workforce5 genconstr sudoku fixanddive gc_pwl_func sos)
  (libraries guroobi unix yojson)
  (deps (glob_files data/*))
 )

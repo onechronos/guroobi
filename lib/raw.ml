@@ -217,6 +217,16 @@ external add_q_constr :
   name:string option ->
   int = "gu_add_q_constr_bc" "gu_add_q_constr"
 
+external add_sos :
+  model:model ->
+  num_sos:int ->
+  num_members:int ->
+  types:i32a ->
+  beg:i32a ->
+  ind:i32a ->
+  weight:fa ->
+  int = "gu_add_sos_bc" "gu_add_sos"
+
 external add_gen_constr_min :
   model:model ->
   name:string option ->
