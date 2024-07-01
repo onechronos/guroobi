@@ -5,46 +5,26 @@ open U
 
 (* This example formulates and solves the following simple QP model:
 
-     minimize    x + y + x^2 + x*y + y^2 + y*z + z^2
-     subject to  x + 2 y + 3 z >= 4
-                 x +   y       >= 1
-                 x, y, z non-negative
+   minimize x + y + x^2 + x*y + y^2 + y*z + z^2 subject to x + 2 y + 3 z >= 4 x
+   + y >= 1 x, y, z non-negative
 
-   The example illustrates the use of dense matrices to store A and Q
-   (and dense vectors for the other relevant data).  We don't recommend
-   that you use dense matrices, but this example may be helpful if you
-   already have your data in this format.
-*)
+   The example illustrates the use of dense matrices to store A and Q (and dense
+   vectors for the other relevant data). We don't recommend that you use dense
+   matrices, but this example may be helpful if you already have your data in
+   this format. *)
 
-(*
-  Solve an LP/QP/MILP/MIQP represented using dense matrices.  This
-  routine assumes that A and Q are both stored in row-major order.
-  It returns 1 if the optimization succeeds.  When successful,
-  it returns the optimal objective value in 'objvalP', and the
-  optimal solution vector in 'solution'.
-*)
+(* Solve an LP/QP/MILP/MIQP represented using dense matrices. This routine
+   assumes that A and Q are both stored in row-major order. It returns 1 if the
+   optimization succeeds. When successful, it returns the optimal objective
+   value in 'objvalP', and the optimal solution vector in 'solution'. *)
 
-let c = [|1.; 1.; 0.|]
-
-let q =   [|
-  [| 1.; 1.; 0. |];
-  [| 0.; 1.; 1. |];
-  [| 0.; 0.; 1. |];
-|]
-
-let a =   [|
-  [| 1.; 2.; 3. |];
-  [| 1.; 1.; 0. |];
-|]
-
-let sense = [|'>'; '>'|]
-
-let rhs = [|4.; 1.|]
-
-let lb = [|0.; 0.; 0.|]
-
+let c = [| 1.; 1.; 0. |]
+let q = [| [| 1.; 1.; 0. |]; [| 0.; 1.; 1. |]; [| 0.; 0.; 1. |] |]
+let a = [| [| 1.; 2.; 3. |]; [| 1.; 1.; 0. |] |]
+let sense = [| '>'; '>' |]
+let rhs = [| 4.; 1. |]
+let lb = [| 0.; 0.; 0. |]
 let rows = 2
-
 let cols = 3
 
 let main () =
@@ -60,19 +40,20 @@ let main () =
       (* Create an empty model *)
       let model =
         eer "new_model"
-          (new_model ~env ~name:(Some "dense") ~num_vars:cols ~objective:(Some (to_fa c))
-             ~lower_bound:(Some (to_fa lb)) ~upper_bound:None ~var_type:None ~var_name:None)
+          (new_model ~env ~name:(Some "dense") ~num_vars:cols
+             ~objective:(Some (to_fa c))
+             ~lower_bound:(Some (to_fa lb))
+             ~upper_bound:None ~var_type:None ~var_name:None)
       in
 
       az
         (add_constrs ~model ~num:rows ~matrix:None ~sense:(to_ca sense)
            ~rhs:(to_fa rhs) ~name:None);
-      
-      (* Populate A matrix *)
 
+      (* Populate A matrix *)
       for i = 0 to rows - 1 do
         for j = 0 to cols - 1 do
-          if a.(i).(j) <> 0. then
+          if a.(i).(j) <> 0. then (
             let num_chgs = 1 in
             let c_ind = i32a num_chgs in
             let v_ind = i32a num_chgs in
@@ -80,15 +61,14 @@ let main () =
             c_ind.{0} <- Int32.of_int i;
             v_ind.{0} <- Int32.of_int j;
             value.{0} <- a.(i).(j);
-            az (chg_coeffs ~model ~num_chgs ~c_ind ~v_ind ~value)
+            az (chg_coeffs ~model ~num_chgs ~c_ind ~v_ind ~value))
         done
       done;
 
       (* Populate Q matrix *)
-
       for i = 0 to cols - 1 do
         for j = 0 to cols - 1 do
-          if q.(i).(j) <> 0. then
+          if q.(i).(j) <> 0. then (
             let num_qnz = 1 in
             let q_row = i32a num_qnz in
             let q_col = i32a num_qnz in
@@ -96,17 +76,15 @@ let main () =
             q_row.{0} <- Int32.of_int i;
             q_col.{0} <- Int32.of_int j;
             q_val.{0} <- q.(i).(j);
-            az (add_q_p_terms ~model ~num_qnz ~q_row ~q_col ~q_val)
+            az (add_q_p_terms ~model ~num_qnz ~q_row ~q_col ~q_val))
         done
       done;
-      
-      (* Optimize model *)
 
+      (* Optimize model *)
       az (optimize model);
       az (write ~model ~path:"dense.lp");
 
       (* Capture solution information *)
-
       let status =
         eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
       in

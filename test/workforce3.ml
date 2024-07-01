@@ -106,8 +106,7 @@ let main () =
       let status =
         eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
       in
-      if status = GRB.unbounded then 
-        pr "model unbounded\n"
+      if status = GRB.unbounded then pr "model unbounded\n"
       else if status = GRB.optimal then
         let obj_val =
           eer "get_float_attr" (get_float_attr ~model ~name:GRB.dbl_attr_objval)
@@ -117,7 +116,7 @@ let main () =
         pr "optimization stopped early with status %d\n" status
       else (
         pr "The model is infeasible; relaxing the constraints\n";
-      
+
         let orig_num_vars =
           eer "get_int_attr" (get_int_attr ~model ~name:"NumVars")
         in
@@ -128,36 +127,37 @@ let main () =
         for i = 0 to num_constrs - 1 do
           rhs_pen.{i} <- 1.
         done;
-      
-        az (feas_relax ~model ~relax_obj_type:GRB.feasrelax_linear ~min_relax:0
-            ~lb_pen:None ~ub_pen:None ~rhs_pen:(Some rhs_pen) ~feas_obf_p:None);
-      
+
+        az
+          (feas_relax ~model ~relax_obj_type:GRB.feasrelax_linear ~min_relax:0
+             ~lb_pen:None ~ub_pen:None ~rhs_pen:(Some rhs_pen) ~feas_obf_p:None);
+
         az (optimize model);
         let status =
           eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
         in
-        if status = GRB.inf_or_unbd || status = GRB.infeasible || status = GRB.unbounded then
-          pr "The model cannot be solved because it is unbounded\n"
-        else if status <> GRB.optimal then (
+        if
+          status = GRB.inf_or_unbd || status = GRB.infeasible
+          || status = GRB.unbounded
+        then pr "The model cannot be solved because it is unbounded\n"
+        else if status <> GRB.optimal then
           pr "Optimization stopped with status %d\n" status
-        ) else (
+        else (
           pr "\nSlack values:\n";
           let num_vars =
             eer "get_int_attr" (get_int_attr ~model ~name:"NumVars")
           in
           for j = orig_num_vars to num_vars - 1 do
             let sol =
-              eer "get_float_attr_element" (get_float_attr_element ~model ~name:"X" ~index:j)
+              eer "get_float_attr_element"
+                (get_float_attr_element ~model ~name:"X" ~index:j)
             in
-            if sol > 1e-6 then (
+            if sol > 1e-6 then
               let sname =
-                eer "get_str_attr_element" (get_str_attr_element ~model ~name:"VarName" ~index:j)
+                eer "get_str_attr_element"
+                  (get_str_attr_element ~model ~name:"VarName" ~index:j)
               in
               pr "%s = %f\n" sname sol
-            )
-          done
-        )
-      )
-      
-      
+          done))
+
 let () = main ()

@@ -84,6 +84,12 @@ type read_model_result = FileNotFound | Ok of model | Error of int
 external read_model : env:env -> path:string -> read_model_result
   = "gu_read_model"
 
+external update_model : model:model -> int 
+  = "gu_update_model"
+
+external reset_model : model:model -> int 
+  = "gu_reset_model"
+
 external set_float_attr_element :
   model:model -> name:string -> index:int -> value:float -> int
   = "gu_set_float_attr_element"
@@ -256,6 +262,39 @@ external add_gen_constr_indicator :
   sense:char ->
   rhs:float ->
   int = "gu_add_gen_constr_indicator_bc" "gu_add_gen_constr_indicator"
+
+external add_gen_constr_pwl :
+  model:model ->
+  name:string option ->
+  x_var:int ->
+  y_var:int ->
+  n_pts:int ->
+  x_pts:fa ->
+  y_pts:fa ->
+  int = "gu_add_gen_constr_pwl_bc" "gu_add_gen_constr_pwl"
+
+external add_gen_constr_exp :
+  model:model ->
+  name:string option ->
+  x_var:int ->
+  y_var:int ->
+  options:string option ->
+  int = "gu_add_gen_constr_exp"
+
+external add_gen_constr_pow :
+  model:model ->
+  name:string option ->
+  x_var:int ->
+  y_var:int ->
+  a:float ->
+  options:string option ->
+  int = "gu_add_gen_constr_pow_bc" "gu_add_gen_constr_pow"
+
+external del_gen_constrs :
+  model:model ->
+  num_del:int ->
+  ind:i32a ->
+  int = "gu_del_gen_constrs"
 
   external feas_relax :
   model:model ->

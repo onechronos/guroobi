@@ -41,11 +41,11 @@ let availability =
   |]
 
 let xcol w s = (n_shifts * w) + s
-let slack_col s = n_shifts * n_workers + s
+let slack_col s = (n_shifts * n_workers) + s
 let tot_slack_col = n_shifts * (n_workers + 1)
-let tot_shifts_col w = n_shifts * (n_workers + 1) + 1 + w
-let avg_shifts_col = (n_shifts+1)*(n_workers+1)
-let diff_shifts_col w = (n_shifts+1)*(n_workers+1)+1+w
+let tot_shifts_col w = (n_shifts * (n_workers + 1)) + 1 + w
+let avg_shifts_col = (n_shifts + 1) * (n_workers + 1)
+let diff_shifts_col w = ((n_shifts + 1) * (n_workers + 1)) + 1 + w
 
 let main () =
   let env = eer "empty_env" (empty_env ()) in
@@ -61,8 +61,9 @@ let main () =
       let model =
         eer "new_model"
           (new_model ~env ~name:(Some "workforce4")
-             ~num_vars:((n_workers+1) * (n_shifts+1)) ~objective:None ~lower_bound:None
-             ~upper_bound:None ~var_type:None ~var_name:None)
+             ~num_vars:((n_workers + 1) * (n_shifts + 1))
+             ~objective:None ~lower_bound:None ~upper_bound:None ~var_type:None
+             ~var_name:None)
       in
 
       for w = 0 to n_workers - 1 do
@@ -80,31 +81,39 @@ let main () =
                ~value:vname)
         done
       done;
-      
+
       for s = 0 to n_shifts - 1 do
         let vname = sp "%sSlack" shifts.(s) in
-        az (set_str_attr_element ~model ~name:"VarName" ~index:(slack_col s) ~value:vname);
+        az
+          (set_str_attr_element ~model ~name:"VarName" ~index:(slack_col s)
+             ~value:vname)
       done;
-      
-      az (set_str_attr_element ~model ~name:"VarName" ~index:tot_slack_col ~value:"totSlack");
+
+      az
+        (set_str_attr_element ~model ~name:"VarName" ~index:tot_slack_col
+           ~value:"totSlack");
 
       for w = 0 to n_workers - 1 do
         let vname = sp "%sTotShifts" workers.(w) in
-        az (set_str_attr_element ~model ~name:"VarName" ~index:(tot_shifts_col w) ~value:vname);
+        az
+          (set_str_attr_element ~model ~name:"VarName" ~index:(tot_shifts_col w)
+             ~value:vname)
       done;
 
       az (set_int_attr ~model ~name:GRB.int_attr_modelsense ~value:GRB.minimize);
 
-      az (set_float_attr_element ~model ~name:"Obj" ~index:tot_slack_col ~value:1.0);
-
+      az
+        (set_float_attr_element ~model ~name:"Obj" ~index:tot_slack_col
+           ~value:1.0);
 
       let sense = ca n_shifts in
 
       let compressed =
-        { num_nz = (n_shifts * (n_workers + 1)); 
-          xbeg = i32a n_shifts; 
-          xind = i32a (n_shifts * (n_workers + 1)); 
-          xval = fa (n_shifts * (n_workers + 1)) 
+        {
+          num_nz = n_shifts * (n_workers + 1);
+          xbeg = i32a n_shifts;
+          xind = i32a (n_shifts * (n_workers + 1));
+          xval = fa (n_shifts * (n_workers + 1));
         }
       in
 
@@ -136,7 +145,9 @@ let main () =
       cind.{!idx} <- Int32.of_int tot_slack_col;
       cval.{!idx} <- -1.0;
       incr idx;
-      az (add_constr ~model ~num_nz:!idx ~var_index:cind ~nz:cval ~sense:GRB.equal ~rhs:0.0 ~name:(Some "totSlack"));
+      az
+        (add_constr ~model ~num_nz:!idx ~var_index:cind ~nz:cval
+           ~sense:GRB.equal ~rhs:0.0 ~name:(Some "totSlack"));
 
       for w = 0 to n_workers - 1 do
         let idx = ref 0 in
@@ -149,7 +160,9 @@ let main () =
         cind.{!idx} <- Int32.of_int (tot_shifts_col w);
         cval.{!idx} <- -1.0;
         incr idx;
-        az (add_constr ~model ~num_nz:!idx ~var_index:cind ~nz:cval ~sense:GRB.equal ~rhs:0.0 ~name:(Some cname))
+        az
+          (add_constr ~model ~num_nz:!idx ~var_index:cind ~nz:cval
+             ~sense:GRB.equal ~rhs:0.0 ~name:(Some cname))
       done;
 
       az (optimize model);
@@ -159,36 +172,51 @@ let main () =
       if
         status = GRB.inf_or_unbd || status = GRB.infeasible
         || status = GRB.unbounded
-      then 
+      then
         pr "the model cannot be solved because it is infeasible or unbounded\n"
       else if status != GRB.optimal then
         Printf.printf "optimization was stopped with status %d\n" status
-      else (
+      else
         let sol =
-          eer "get_float_attr_element" (get_float_attr_element ~model ~name:"X" ~index:tot_slack_col)
+          eer "get_float_attr_element"
+            (get_float_attr_element ~model ~name:"X" ~index:tot_slack_col)
         in
         pr "\nTotal slack required: %f\n" sol;
-        
+
         for w = 0 to n_workers - 1 do
           let sol =
-            eer "get_float_attr_element" (get_float_attr_element ~model ~name:"X" ~index:(tot_shifts_col w))
+            eer "get_float_attr_element"
+              (get_float_attr_element ~model ~name:"X" ~index:(tot_shifts_col w))
           in
           pr "%s worked %f shifts\n" workers.(w) sol
         done;
-        
-        az (set_float_attr_element ~model ~name:"UB" ~index:tot_slack_col ~value:sol);
-        az (set_float_attr_element ~model ~name:"LB" ~index:tot_slack_col ~value:sol);
-        
-        az (add_var ~model ~num_nz:0 ~v_ind:None ~v_val:None ~obj:0.0 ~lb:0.0 ~ub:GRB.infinity ~v_type:GRB.continuous ~var_name:( Some "avgShifts"));
-        
-        az (add_vars ~model ~num_vars:n_workers ~matrix:None ~objective:None ~lower_bound:None ~upper_bound:None ~var_type:None ~name:None);
-        
+
+        az
+          (set_float_attr_element ~model ~name:"UB" ~index:tot_slack_col
+             ~value:sol);
+        az
+          (set_float_attr_element ~model ~name:"LB" ~index:tot_slack_col
+             ~value:sol);
+
+        az
+          (add_var ~model ~num_nz:0 ~v_ind:None ~v_val:None ~obj:0.0 ~lb:0.0
+             ~ub:GRB.infinity ~v_type:GRB.continuous
+             ~var_name:(Some "avgShifts"));
+
+        az
+          (add_vars ~model ~num_vars:n_workers ~matrix:None ~objective:None
+             ~lower_bound:None ~upper_bound:None ~var_type:None ~name:None);
+
         for w = 0 to n_workers - 1 do
           let vname = Printf.sprintf "%sDiff" workers.(w) in
-          az (set_str_attr_element ~model ~name:"VarName" ~index:(diff_shifts_col w) ~value:vname);
-          az (set_float_attr_element ~model ~name:"LB" ~index:(diff_shifts_col w) ~value:(-.GRB.infinity))
+          az
+            (set_str_attr_element ~model ~name:"VarName"
+               ~index:(diff_shifts_col w) ~value:vname);
+          az
+            (set_float_attr_element ~model ~name:"LB" ~index:(diff_shifts_col w)
+               ~value:(-.GRB.infinity))
         done;
-        
+
         let idx = ref 0 in
         for w = 0 to n_workers - 1 do
           cind.{!idx} <- Int32.of_int (tot_shifts_col w);
@@ -198,8 +226,10 @@ let main () =
         cind.{!idx} <- Int32.of_int avg_shifts_col;
         cval.{!idx} <- float_of_int (-n_workers);
         incr idx;
-        az (add_constr ~model ~num_nz:(!idx) ~var_index:cind ~nz:cval ~sense:GRB.equal ~rhs:0.0 ~name:(Some "avgShifts"));
-        
+        az
+          (add_constr ~model ~num_nz:!idx ~var_index:cind ~nz:cval
+             ~sense:GRB.equal ~rhs:0.0 ~name:(Some "avgShifts"));
+
         for w = 0 to n_workers - 1 do
           cind.{0} <- Int32.of_int (tot_shifts_col w);
           cval.{0} <- 1.0;
@@ -207,43 +237,53 @@ let main () =
           cval.{1} <- -1.0;
           cind.{2} <- Int32.of_int (diff_shifts_col w);
           cval.{2} <- -1.0;
-        
+
           let cname = Printf.sprintf "%sDiff" workers.(w) in
-          az (add_constr ~model ~num_nz:3 ~var_index:cind ~nz:cval ~sense:GRB.equal ~rhs:0.0 ~name:(Some cname))
+          az
+            (add_constr ~model ~num_nz:3 ~var_index:cind ~nz:cval
+               ~sense:GRB.equal ~rhs:0.0 ~name:(Some cname))
         done;
-        
-        az (set_float_attr_element ~model ~name:"Obj" ~index:tot_slack_col ~value:0.0);
-        
+
+        az
+          (set_float_attr_element ~model ~name:"Obj" ~index:tot_slack_col
+             ~value:0.0);
+
         for w = 0 to n_workers - 1 do
           cind.{w} <- Int32.of_int (diff_shifts_col w);
           cval.{w} <- 1.0
         done;
-        
-        az (add_q_p_terms ~model ~num_qnz:n_workers ~q_row:cind ~q_col:cind ~q_val:cval);
-        
+
+        az
+          (add_q_p_terms ~model ~num_qnz:n_workers ~q_row:cind ~q_col:cind
+             ~q_val:cval);
+
         az (optimize model);
         let status =
           eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
         in
-        if status = GRB.inf_or_unbd || status = GRB.infeasible || status = GRB.unbounded then
-          pr "the model cannot be solved because it is infeasible or unbounded\n"
-        else if status <> GRB.optimal then
-          Printf.printf "optimization was stopped with status %d\n" status
-        else (
-          let sol =
-            eer "get_float_attr_element" (get_float_attr_element ~model ~name:"X" ~index:tot_slack_col)
-          in
-          pr "\nTotal slack required: %f\n" sol;
-        
-          for w = 0 to n_workers - 1 do
-            let sol =
-              eer "get_float_attr_element" (get_float_attr_element ~model ~name:"X" ~index:(tot_shifts_col w))
-            in
-            pr "%s worked %f shifts\n" workers.(w) sol
-          done
-        );
+        (if
+           status = GRB.inf_or_unbd || status = GRB.infeasible
+           || status = GRB.unbounded
+         then
+           pr
+             "the model cannot be solved because it is infeasible or unbounded\n"
+         else if status <> GRB.optimal then
+           Printf.printf "optimization was stopped with status %d\n" status
+         else
+           let sol =
+             eer "get_float_attr_element"
+               (get_float_attr_element ~model ~name:"X" ~index:tot_slack_col)
+           in
+           pr "\nTotal slack required: %f\n" sol;
+
+           for w = 0 to n_workers - 1 do
+             let sol =
+               eer "get_float_attr_element"
+                 (get_float_attr_element ~model ~name:"X"
+                    ~index:(tot_shifts_col w))
+             in
+             pr "%s worked %f shifts\n" workers.(w) sol
+           done);
         pr "\n"
-      )
-      
-      
+
 let () = main ()

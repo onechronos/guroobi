@@ -106,8 +106,7 @@ let main () =
       let status =
         eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
       in
-      if status = GRB.unbounded then 
-        pr "model unbounded\n"
+      if status = GRB.unbounded then pr "model unbounded\n"
       else if status = GRB.optimal then
         let obj_val =
           eer "get_float_attr" (get_float_attr ~model ~name:GRB.dbl_attr_objval)
@@ -125,30 +124,28 @@ let main () =
         let rec while_loop () =
           az (compute_iis model);
           pr "\nThe following constraint(s) cannot be satisfied:\n";
-        
+
           let rec for_loop i =
             let iis =
               eer "get_int_attr_element"
                 (get_int_attr_element ~model ~name:GRB.int_attr_iis_constr
-                  ~index:i)
+                   ~index:i)
             in
-            if iis = 0 && i < (num_constraints - 1) then
-              for_loop (i + 1)
+            if iis = 0 && i < num_constraints - 1 then for_loop (i + 1)
             else if iis <> 0 then (
               let constraint_name =
                 eer "get_str_attr_element"
                   (get_str_attr_element ~model ~name:GRB.str_attr_constrname
-                    ~index:i)
+                     ~index:i)
               in
               pr "%s\n" constraint_name;
               removed := constraint_name :: !removed;
-              az (del_constrs ~model ~num_del:1 ~ind:(to_i32a [|i|]))
-            )
+              az (del_constrs ~model ~num_del:1 ~ind:(to_i32a [| i |])))
           in
           for_loop 0;
-        
+
           pr "\n";
-        
+
           az (optimize model);
           let status =
             eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
@@ -156,17 +153,16 @@ let main () =
           if status = GRB.unbounded then
             pr "The model cannot be solved because it is unbounded\n"
           else if status = GRB.optimal then (
-            pr "\nThe following constraints were removed to get a feasible LP:\n";
-            for i = 0 to (List.length !removed) - 1 do
+            pr
+              "\nThe following constraints were removed to get a feasible LP:\n";
+            for i = 0 to List.length !removed - 1 do
               pr "%s " (List.nth (List.rev !removed) i)
             done;
-            pr "\n"
-          ) else if status <> GRB.inf_or_unbd && status <> GRB.infeasible then
+            pr "\n")
+          else if status <> GRB.inf_or_unbd && status <> GRB.infeasible then
             pr "Optimization stopped early with status %d\n" status
-          else
-            while_loop ()
+          else while_loop ()
         in
-        while_loop ()
-      )
-      
+        while_loop ())
+
 let () = main ()
