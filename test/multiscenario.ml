@@ -49,7 +49,8 @@ let main () =
       exit 1
   | Ok () ->
       az (set_int_param ~env ~name:GRB.int_par_outputflag ~value:0);
-      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"multiscenario.log");
+      az
+        (set_str_param ~env ~name:GRB.str_par_logfile ~value:"multiscenario.log");
       az (start_env env);
 
       (* Create initial model *)
