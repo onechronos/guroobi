@@ -90,6 +90,9 @@ external update_model : model:model -> int
 external reset_model : model:model -> int 
   = "gu_reset_model"
 
+external copy_model : model:model -> model option 
+  = "gu_copy_model"
+
 external set_float_attr_element :
   model:model -> name:string -> index:int -> value:float -> int
   = "gu_set_float_attr_element"

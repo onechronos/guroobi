@@ -728,6 +728,25 @@ CAMLprim value gu_update_model(value v_model)
   CAMLreturn( Val_int( error ) );
 }
 
+CAMLprim value gu_copy_model(value v_model)
+{
+  CAMLparam1( v_model );
+  CAMLlocal2( v_new_model, v_res );
+  GRBmodel* model = model_val(v_model);
+  GRBmodel* new_model = GRBcopymodel( model );
+  if (new_model == NULL){
+    v_res = Val_none;
+  } else {
+    v_new_model = caml_alloc_custom(&model_ops, sizeof(void*), 0, 1);
+    model_val(v_new_model) = new_model;
+
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_new_model );
+  }
+  
+  CAMLreturn( v_res );
+}
+
 // set a float attribute in an implicit array of such attributes
 CAMLprim value gu_set_float_attr_element(value v_model, value v_name, value v_element, value v_new_value )
 {
