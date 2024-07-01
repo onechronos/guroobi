@@ -51,13 +51,13 @@ let main () =
       print_endline msg;
       exit 1
   | Ok () ->
-      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"workforce1.log");
+      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"workforce2.log");
       az (set_int_param ~env ~name:GRB.int_par_outputflag ~value:0);
 
       az (start_env env);
       let model =
         eer "new_mode"
-          (new_model ~env ~name:(Some "workforce1")
+          (new_model ~env ~name:(Some "workforce2")
              ~num_vars:(n_workers * n_shifts) ~objective:None ~lower_bound:None
              ~upper_bound:None ~var_type:None ~var_name:None)
       in
@@ -112,28 +112,57 @@ let main () =
           eer "get_float_attr" (get_float_attr ~model ~name:GRB.dbl_attr_objval)
         in
         pr "obj: %.4e\n" obj_val
-      else if status != GRB.inf_or_unbd && status != GRB.infeasible then
+      else if status <> GRB.inf_or_unbd && status <> GRB.infeasible then
         pr "optimization stopped early with status %d\n" status
       else (
-        pr "model infeasible; computing IIS\n";
-        az (compute_iis model);
-        pr "following constraint(s) cannot be satisfied:\n";
+        pr "The model is infeasible; computing IIS\n";
         let num_constraints =
           eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_numconstrs)
         in
-        for i = 0 to num_constraints - 1 do
-          let iis =
-            eer "get_int_attr"
-              (get_int_attr_element ~model ~name:GRB.int_attr_iis_constr
-                 ~index:i)
-          in
-          if iis != 0 then
-            let constraint_name =
-              eer "get_str_attr_element"
-                (get_str_attr_element ~model ~name:GRB.str_attr_constrname
+
+        let removed = ref [] in
+        let rec while_loop () =
+          az (compute_iis model);
+          pr "\nThe following constraint(s) cannot be satisfied:\n";
+
+          let rec for_loop i =
+            let iis =
+              eer "get_int_attr_element"
+                (get_int_attr_element ~model ~name:GRB.int_attr_iis_constr
                    ~index:i)
             in
-            pr "%s\n" constraint_name
-        done)
+            if iis = 0 && i < num_constraints - 1 then for_loop (i + 1)
+            else if iis <> 0 then (
+              let constraint_name =
+                eer "get_str_attr_element"
+                  (get_str_attr_element ~model ~name:GRB.str_attr_constrname
+                     ~index:i)
+              in
+              pr "%s\n" constraint_name;
+              removed := constraint_name :: !removed;
+              az (del_constrs ~model ~num_del:1 ~ind:(to_i32a [| i |])))
+          in
+          for_loop 0;
+
+          pr "\n";
+
+          az (optimize model);
+          let status =
+            eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
+          in
+          if status = GRB.unbounded then
+            pr "The model cannot be solved because it is unbounded\n"
+          else if status = GRB.optimal then (
+            pr
+              "\nThe following constraints were removed to get a feasible LP:\n";
+            for i = 0 to List.length !removed - 1 do
+              pr "%s " (List.nth (List.rev !removed) i)
+            done;
+            pr "\n")
+          else if status <> GRB.inf_or_unbd && status <> GRB.infeasible then
+            pr "Optimization stopped early with status %d\n" status
+          else while_loop ()
+        in
+        while_loop ())
 
 let () = main ()

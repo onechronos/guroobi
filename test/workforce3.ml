@@ -51,13 +51,13 @@ let main () =
       print_endline msg;
       exit 1
   | Ok () ->
-      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"workforce1.log");
+      az (set_str_param ~env ~name:GRB.str_par_logfile ~value:"workforce3.log");
       az (set_int_param ~env ~name:GRB.int_par_outputflag ~value:0);
 
       az (start_env env);
       let model =
         eer "new_mode"
-          (new_model ~env ~name:(Some "workforce1")
+          (new_model ~env ~name:(Some "workforce3")
              ~num_vars:(n_workers * n_shifts) ~objective:None ~lower_bound:None
              ~upper_bound:None ~var_type:None ~var_name:None)
       in
@@ -112,28 +112,52 @@ let main () =
           eer "get_float_attr" (get_float_attr ~model ~name:GRB.dbl_attr_objval)
         in
         pr "obj: %.4e\n" obj_val
-      else if status != GRB.inf_or_unbd && status != GRB.infeasible then
+      else if status <> GRB.inf_or_unbd && status <> GRB.infeasible then
         pr "optimization stopped early with status %d\n" status
       else (
-        pr "model infeasible; computing IIS\n";
-        az (compute_iis model);
-        pr "following constraint(s) cannot be satisfied:\n";
-        let num_constraints =
-          eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_numconstrs)
+        pr "The model is infeasible; relaxing the constraints\n";
+
+        let orig_num_vars =
+          eer "get_int_attr" (get_int_attr ~model ~name:"NumVars")
         in
-        for i = 0 to num_constraints - 1 do
-          let iis =
-            eer "get_int_attr"
-              (get_int_attr_element ~model ~name:GRB.int_attr_iis_constr
-                 ~index:i)
+        let num_constrs =
+          eer "get_int_attr" (get_int_attr ~model ~name:"NumConstrs")
+        in
+        let rhs_pen = fa num_constrs in
+        for i = 0 to num_constrs - 1 do
+          rhs_pen.{i} <- 1.
+        done;
+
+        az
+          (feas_relax ~model ~relax_obj_type:GRB.feasrelax_linear ~min_relax:0
+             ~lb_pen:None ~ub_pen:None ~rhs_pen:(Some rhs_pen) ~feas_obf_p:None);
+
+        az (optimize model);
+        let status =
+          eer "get_int_attr" (get_int_attr ~model ~name:GRB.int_attr_status)
+        in
+        if
+          status = GRB.inf_or_unbd || status = GRB.infeasible
+          || status = GRB.unbounded
+        then pr "The model cannot be solved because it is unbounded\n"
+        else if status <> GRB.optimal then
+          pr "Optimization stopped with status %d\n" status
+        else (
+          pr "\nSlack values:\n";
+          let num_vars =
+            eer "get_int_attr" (get_int_attr ~model ~name:"NumVars")
           in
-          if iis != 0 then
-            let constraint_name =
-              eer "get_str_attr_element"
-                (get_str_attr_element ~model ~name:GRB.str_attr_constrname
-                   ~index:i)
+          for j = orig_num_vars to num_vars - 1 do
+            let sol =
+              eer "get_float_attr_element"
+                (get_float_attr_element ~model ~name:"X" ~index:j)
             in
-            pr "%s\n" constraint_name
-        done)
+            if sol > 1e-6 then
+              let sname =
+                eer "get_str_attr_element"
+                  (get_str_attr_element ~model ~name:"VarName" ~index:j)
+              in
+              pr "%s = %f\n" sname sol
+          done))
 
 let () = main ()

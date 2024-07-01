@@ -84,6 +84,15 @@ type read_model_result = FileNotFound | Ok of model | Error of int
 external read_model : env:env -> path:string -> read_model_result
   = "gu_read_model"
 
+external update_model : model:model -> int 
+  = "gu_update_model"
+
+external reset_model : model:model -> int 
+  = "gu_reset_model"
+
+external copy_model : model:model -> model option 
+  = "gu_copy_model"
+
 external set_float_attr_element :
   model:model -> name:string -> index:int -> value:float -> int
   = "gu_set_float_attr_element"
@@ -134,13 +143,25 @@ external set_int_attr : model:model -> name:string -> value:int -> int
 external get_int_attr : model:model -> name:string -> (int, int) result
   = "gu_get_int_attr"
 
+external set_float_attr_array :
+  model:model -> name:string -> start:int -> len:int -> values:fa -> int
+  = "gu_set_float_attr_array"
+
 external get_float_attr_array :
   model:model -> name:string -> start:int -> len:int -> (fa, int) result
   = "gu_get_float_attr_array"
 
+external set_int_attr_array :
+  model:model -> name:string -> start:int -> len:int -> values:i32a -> int
+  = "gu_set_int_attr_array"
+
 external get_int_attr_array :
   mmodel:model -> name:string -> start:int -> len:int -> (i32a, int) result
   = "gu_get_int_attr_array"
+
+external set_char_attr_array :
+  model:model -> name:string -> start:int -> len:int -> values:ca -> int
+  = "gu_set_char_attr_array"
 
 external get_char_attr_array :
   model:model -> name:string -> start:int -> len:int -> (ca, int) result
@@ -173,6 +194,10 @@ external add_constrs :
   name:string array option ->
   int = "gu_add_constrs_bc" "gu_add_constrs"
 
+external del_constrs :
+  model:model -> num_del:int -> ind:i32a -> int
+  = "gu_del_constrs"
+
 external add_constr :
   model:model ->
   num_nz:int ->
@@ -195,6 +220,117 @@ external add_q_constr :
   name:string option ->
   int = "gu_add_q_constr_bc" "gu_add_q_constr"
 
+external add_sos :
+  model:model ->
+  num_sos:int ->
+  num_members:int ->
+  types:i32a ->
+  beg:i32a ->
+  ind:i32a ->
+  weight:fa ->
+  int = "gu_add_sos_bc" "gu_add_sos"
+
+external add_gen_constr_min :
+  model:model ->
+  name:string option ->
+  res_var:int ->
+  n_vars:int ->
+  vars:i32a ->
+  constant:float ->
+  int = "gu_add_gen_constr_min_bc" "gu_add_gen_constr_min"
+
+external add_gen_constr_max :
+  model:model ->
+  name:string option ->
+  res_var:int ->
+  n_vars:int ->
+  vars:i32a ->
+  constant:float ->
+  int = "gu_add_gen_constr_max_bc" "gu_add_gen_constr_max"
+
+external add_gen_constr_and :
+  model:model ->
+  name:string option ->
+  res_var:int ->
+  n_vars:int ->
+  vars:i32a ->
+  int = "gu_add_gen_constr_and"
+
+external add_gen_constr_or :
+  model:model ->
+  name:string option ->
+  res_var:int ->
+  n_vars:int ->
+  vars:i32a ->
+  int = "gu_add_gen_constr_or"
+
+external add_gen_constr_indicator :
+  model:model ->
+  name:string option ->
+  bin_var:int ->
+  bin_val:int ->
+  n_vars:int ->
+  ind:i32a option ->
+  value:fa option ->
+  sense:char ->
+  rhs:float ->
+  int = "gu_add_gen_constr_indicator_bc" "gu_add_gen_constr_indicator"
+
+external add_gen_constr_pwl :
+  model:model ->
+  name:string option ->
+  x_var:int ->
+  y_var:int ->
+  n_pts:int ->
+  x_pts:fa ->
+  y_pts:fa ->
+  int = "gu_add_gen_constr_pwl_bc" "gu_add_gen_constr_pwl"
+
+external add_gen_constr_exp :
+  model:model ->
+  name:string option ->
+  x_var:int ->
+  y_var:int ->
+  options:string option ->
+  int = "gu_add_gen_constr_exp"
+
+external add_gen_constr_pow :
+  model:model ->
+  name:string option ->
+  x_var:int ->
+  y_var:int ->
+  a:float ->
+  options:string option ->
+  int = "gu_add_gen_constr_pow_bc" "gu_add_gen_constr_pow"
+
+external del_gen_constrs :
+  model:model ->
+  num_del:int ->
+  ind:i32a ->
+  int = "gu_del_gen_constrs"
+
+  external feas_relax :
+  model:model ->
+  relax_obj_type:int ->
+  min_relax:int ->
+  lb_pen:fa option ->
+  ub_pen:fa option ->
+  rhs_pen:fa option ->
+  feas_obf_p:fa option ->
+  int = "gu_feas_relax_bc" "gu_feas_relax"
+
+external add_var :
+  model:model ->
+  num_nz:int ->
+  v_ind:i32a option ->
+  v_val:fa option ->
+  obj:float ->
+  lb:float ->
+  ub:float ->
+  v_type:char ->
+  var_name:string option ->
+  int = "gu_add_var_bc" "gu_add_var"
+
 external add_vars :
   model:model ->
   num_vars:int ->
@@ -205,6 +341,22 @@ external add_vars :
   var_type:ca option ->
   name:string array option ->
   int = "gu_add_vars_bc" "gu_add_vars"
+
+external chg_coeffs :
+  model:model ->
+  num_chgs:int ->
+  c_ind:i32a ->
+  v_ind:i32a ->
+  value:fa ->
+  int = "gu_chg_coeffs"
+
+external add_q_p_terms :
+  model:model ->
+  num_qnz:int ->
+  q_row:i32a ->
+  q_col:i32a ->
+  q_val:fa ->
+  int = "gu_add_q_p_terms"
 
 external optimize : model -> int = "gu_optimize"
 external write : model:model -> path:string -> int = "gu_write"
@@ -223,3 +375,11 @@ external set_objective_n :
   var_index:i32a ->
   nz:fa ->
   int = "gu_set_objective_n_bc" "gu_set_objective_n"
+
+external set_pwl_obj :
+  model:model ->
+  var:int ->
+  n_points:int ->
+  x:fa ->
+  y:fa ->
+  int = "gu_set_pwl_obj"

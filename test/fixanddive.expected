@@ -1,0 +1,10 @@
+Iteration 0, obj 4.000000, fractional 6
+  Fix 0004 to 1.000000 ( rel 0.666667 )
+Iteration 1, obj 4.000000, fractional 6
+  Fix 0006 to 1.000000 ( rel 0.666667 )
+Iteration 2, obj 4.333333, fractional 5
+  Fix 0002 to 1.000000 ( rel 0.666667 )
+Iteration 3, obj 4.500000, fractional 3
+  Fix 0008 to 1.000000 ( rel 0.500000 )
+Iteration 4, obj 5.000000, fractional 0
+Found feasible solution - objective 5.000000
