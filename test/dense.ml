@@ -21,7 +21,7 @@ open U
 let c = [| 1.; 1.; 0. |]
 let q = [| [| 1.; 1.; 0. |]; [| 0.; 1.; 1. |]; [| 0.; 0.; 1. |] |]
 let a = [| [| 1.; 2.; 3. |]; [| 1.; 1.; 0. |] |]
-let sense = [| '>'; '>' |]
+let sense = [| GRB.greater_equal; GRB.greater_equal |]
 let rhs = [| 4.; 1. |]
 let lb = [| 0.; 0.; 0. |]
 let rows = 2
