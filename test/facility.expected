@@ -1,0 +1,18 @@
+Initial guess:
+Closing plant 2
+
+
+TOTAL COSTS: 210500.000000
+SOLUTION:
+Plant 0 open:
+  Transport 14.000000 units to warehouse 2
+  Transport 6.000000 units to warehouse 3
+Plant 1 open:
+  Transport 14.000000 units to warehouse 0
+  Transport 8.000000 units to warehouse 3
+Plant 2 closed!
+Plant 3 open:
+  Transport 1.000000 units to warehouse 0
+  Transport 18.000000 units to warehouse 1
+Plant 4 open:
+  Transport 6.000000 units to warehouse 3

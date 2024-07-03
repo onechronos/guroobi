@@ -1,0 +1,128 @@
+Initial guess:
+Closing plant 2
+
+
+
+------ Scenario 0 (Base model)
+
+TOTAL COSTS: 210500
+SOLUTION:
+Plant 0 open
+  Transport 14 units to warehouse 2
+  Transport 6 units to warehouse 3
+Plant 1 open
+  Transport 14 units to warehouse 0
+  Transport 8 units to warehouse 3
+Plant 2 closed!
+Plant 3 open
+  Transport 1 units to warehouse 0
+  Transport 18 units to warehouse 1
+Plant 4 open
+  Transport 6 units to warehouse 3
+
+
+------ Scenario 1 (Increased warehouse demands)
+
+TOTAL COSTS: 229270
+SOLUTION:
+Plant 0 open
+  Transport 15.4 units to warehouse 2
+  Transport 4.6 units to warehouse 3
+Plant 1 open
+  Transport 16.5 units to warehouse 0
+  Transport 0.8 units to warehouse 1
+  Transport 4.7 units to warehouse 3
+Plant 2 open
+  Transport 12.7 units to warehouse 3
+Plant 3 open
+  Transport 19 units to warehouse 1
+Plant 4 closed!
+
+
+------ Scenario 2 (Double the warehouse demands)
+
+INFEASIBLE
+
+
+------ Scenario 3 (Decreased plant fixed costs)
+
+TOTAL COSTS: 207700
+SOLUTION:
+Plant 0 open
+  Transport 14 units to warehouse 2
+  Transport 6 units to warehouse 3
+Plant 1 open
+  Transport 14 units to warehouse 0
+  Transport 8 units to warehouse 3
+Plant 2 closed!
+Plant 3 open
+  Transport 1 units to warehouse 0
+  Transport 18 units to warehouse 1
+Plant 4 open
+  Transport 6 units to warehouse 3
+
+
+------ Scenario 4 (Increased warehouse demands and decreased plant fixed costs)
+
+TOTAL COSTS: 226420
+SOLUTION:
+Plant 0 open
+  Transport 15.4 units to warehouse 2
+  Transport 4.6 units to warehouse 3
+Plant 1 open
+  Transport 16.5 units to warehouse 0
+  Transport 0.8 units to warehouse 1
+  Transport 4.7 units to warehouse 3
+Plant 2 open
+  Transport 12.7 units to warehouse 3
+Plant 3 open
+  Transport 19 units to warehouse 1
+Plant 4 closed!
+
+
+------ Scenario 5 (Force plant with largest fixed cost to stay open)
+
+TOTAL COSTS: 210900
+SOLUTION:
+Plant 0 open
+  Transport 14 units to warehouse 2
+  Transport 6 units to warehouse 3
+Plant 1 open
+  Transport 15 units to warehouse 0
+  Transport 7 units to warehouse 3
+Plant 2 open
+  Transport 7 units to warehouse 3
+Plant 3 open
+  Transport 18 units to warehouse 1
+Plant 4 closed!
+
+
+------ Scenario 6 (Force plant with smallest fixed cost to be closed)
+
+TOTAL COSTS: 238400
+SOLUTION:
+Plant 0 closed!
+Plant 1 open
+  Transport 14 units to warehouse 0
+  Transport 8 units to warehouse 2
+Plant 2 open
+  Transport 6 units to warehouse 2
+  Transport 11 units to warehouse 3
+Plant 3 open
+  Transport 1 units to warehouse 0
+  Transport 18 units to warehouse 1
+Plant 4 open
+  Transport 9 units to warehouse 3
+
+
+Summary: Closed plants depending on scenario
+
+         |             Plant             |
+Scenario |     0     1     2     3     4 |  Costs  Name
+0        |                 x             | 210500  Base model
+1        |                             x | 229270  Increased warehouse demands
+2        | infeasible                    |      -  Double the warehouse demands
+3        |                 x             | 207700  Decreased plant fixed costs
+4        |                             x | 226420  Increased warehouse demands and decreased plant fixed costs
+5        |                             x | 210900  Force plant with largest fixed cost to stay open
+6        |     x                         | 238400  Force plant with smallest fixed cost to be closed

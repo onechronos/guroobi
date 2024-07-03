@@ -1,0 +1,20 @@
+The model is infeasible; computing IIS
+
+The following constraint(s) cannot be satisfied:
+Thu4
+
+
+The following constraint(s) cannot be satisfied:
+Sat6
+
+
+The following constraint(s) cannot be satisfied:
+Sun7
+
+
+The following constraint(s) cannot be satisfied:
+Fri12
+
+
+The following constraints were removed to get a feasible LP:
+Thu4 Sat6 Sun7 Fri12 

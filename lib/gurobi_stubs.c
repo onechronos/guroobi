@@ -363,7 +363,25 @@ CAMLprim value gu_get_float_model_param( value v_model, value v_name )
   CAMLreturn( v_res );
 }
 
-// get float attribute array
+// get and set float attribute array
+CAMLprim value gu_set_float_attr_array(
+  value v_model, 
+  value v_name,
+  value v_start, 
+  value v_len, 
+  value v_values 
+)
+{
+  CAMLparam5( v_model, v_name, v_start, v_len, v_values );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int start = Int_val(v_start);
+  int len = Int_val(v_len);
+  double* values = get_fa(v_values, len);
+  int error = GRBsetdblattrarray( model, name, start, len, values );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_get_float_attr_array( value v_model, value v_name, value v_start, value v_len )
 {
   CAMLparam4( v_model, v_name, v_start, v_len );
@@ -396,7 +414,25 @@ CAMLprim value gu_get_float_attr_array( value v_model, value v_name, value v_sta
   }
 }
 
-// get int attribute array
+// set and get int attribute array
+CAMLprim value gu_set_int_attr_array(
+  value v_model, 
+  value v_name,
+  value v_start, 
+  value v_len, 
+  value v_values 
+)
+{
+  CAMLparam5( v_model, v_name, v_start, v_len, v_values );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int start = Int_val(v_start);
+  int len = Int_val(v_len);
+  int* values = get_i32a(v_values, len);
+  int error = GRBsetintattrarray( model, name, start, len, values );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_get_int_attr_array( value v_model, value v_name, value v_start, value v_len )
 {
   CAMLparam4( v_model, v_name, v_start, v_len );
@@ -429,7 +465,26 @@ CAMLprim value gu_get_int_attr_array( value v_model, value v_name, value v_start
   }
 }
 
-// get char attribute array
+// set and get char attribute array
+
+CAMLprim value gu_set_char_attr_array(
+  value v_model, 
+  value v_name,
+  value v_start, 
+  value v_len, 
+  value v_values 
+)
+{
+  CAMLparam5( v_model, v_name, v_start, v_len, v_values );
+  GRBmodel* model = model_val(v_model);
+  const char* name = String_val(v_name);
+  int start = Int_val(v_start);
+  int len = Int_val(v_len);
+  char* values = get_ca(v_values, len);
+  int error = GRBsetcharattrarray( model, name, start, len, values );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_get_char_attr_array( value v_model, value v_name, value v_start, value v_len )
 {
   CAMLparam4( v_model, v_name, v_start, v_len );
@@ -609,15 +664,16 @@ CAMLprim value gu_new_model(
 CAMLprim value gu_new_model_bc(value* v_args, int arg_n )
 {
   assert( arg_n == 8 );
-  return gu_new_model( v_args[0],
-		       v_args[1],
-		       v_args[2],
-		       v_args[3],
-		       v_args[4],
-		       v_args[5],
-		       v_args[6],
-		       v_args[7]
-		     );
+  return gu_new_model(
+		      v_args[0],
+		      v_args[1],
+		      v_args[2],
+		      v_args[3],
+		      v_args[4],
+		      v_args[5],
+		      v_args[6],
+		      v_args[7]
+		      );
 }
 
 // create a model from a file
@@ -654,6 +710,40 @@ CAMLprim value gu_read_model( value v_env, value v_path )
     v_res = Val_int(0);
   }
 
+  CAMLreturn( v_res );
+}
+
+CAMLprim value gu_reset_model(value v_model)
+{
+  CAMLparam1( v_model );
+  GRBmodel* model = model_val(v_model);
+  int error = GRBresetmodel( model );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_update_model(value v_model)
+{
+  CAMLparam1( v_model );
+  GRBmodel* model = model_val(v_model);
+  int error = GRBupdatemodel( model );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_copy_model(value v_model)
+{
+  CAMLparam1( v_model );
+  CAMLlocal2( v_new_model, v_res );
+  GRBmodel* model = model_val(v_model);
+  GRBmodel* new_model = GRBcopymodel( model );
+  if (new_model == NULL){
+    v_res = Val_none;
+  } else {
+    v_new_model = caml_alloc_custom(&model_ops, sizeof(void*), 0, 1);
+    model_val(v_new_model) = new_model;
+
+    v_res = caml_alloc_some( v_new_model );
+  }
+  
   CAMLreturn( v_res );
 }
 
@@ -975,14 +1065,29 @@ CAMLprim value gu_add_constrs(
 CAMLprim value gu_add_constrs_bc(value* v_args, int arg_n )
 {
   assert( arg_n == 6 );
-  return gu_add_constrs( v_args[0],
-		         v_args[1],
-  		         v_args[2],
-		         v_args[3],
-		         v_args[4],
-		         v_args[5]
-			 );
+  return gu_add_constrs(
+			v_args[0],
+			v_args[1],
+			v_args[2],
+			v_args[3],
+			v_args[4],
+			v_args[5]
+			);
 }  
+
+CAMLprim value gu_del_constrs(
+  value v_model, 
+  value v_num_del,
+  value v_ind
+)
+{
+  CAMLparam3( v_model, v_num_del, v_ind );
+  GRBmodel* model = model_val(v_model);
+  int num_del = Int_val(v_num_del);
+  int* ind = get_i32a(v_ind, num_del);
+  int error = GRBdelconstrs( model, num_del, ind );
+  CAMLreturn( Val_int( error ) );
+}
 
 CAMLprim value gu_add_constr(
  value v_model,
@@ -1024,14 +1129,15 @@ CAMLprim value gu_add_constr(
 CAMLprim value gu_add_constr_bc(value* v_args, int arg_n )
 {
   assert( arg_n == 7 );
-  return gu_add_constr( v_args[0],
-		        v_args[1],
-  		        v_args[2],
-		        v_args[3],
-		        v_args[4],
-		        v_args[5],
-		        v_args[6]
-		      );
+  return gu_add_constr(
+		       v_args[0],
+		       v_args[1],
+		       v_args[2],
+		       v_args[3],
+		       v_args[4],
+		       v_args[5],
+		       v_args[6]
+		       );
 }
 
 CAMLprim value gu_add_q_constr(
@@ -1118,16 +1224,523 @@ CAMLprim value gu_add_q_constr(
 CAMLprim value gu_add_q_constr_bc(value* v_args, int arg_n )
 {
   assert( arg_n == 9 );
-  return gu_add_q_constr( v_args[0],
-		          v_args[1],
-  		          v_args[2],
-		          v_args[3],
-			  v_args[4],
-			  v_args[5],
-			  v_args[6],
-			  v_args[7],
-			  v_args[8]
-			  );
+  return gu_add_q_constr(
+			 v_args[0],
+			 v_args[1],
+			 v_args[2],
+			 v_args[3],
+			 v_args[4],
+			 v_args[5],
+			 v_args[6],
+			 v_args[7],
+			 v_args[8]
+			 );
+}
+
+CAMLprim value gu_add_sos(
+ value v_model,
+ value v_num_sos,
+ value v_num_members,
+ value v_types,
+ value v_beg,
+ value v_ind,
+ value v_weight
+)
+{
+  CAMLparam5( v_model, v_num_sos, v_num_members, v_types, v_beg );
+  CAMLxparam2( v_ind, v_weight );
+
+  GRBmodel* model = model_val( v_model );
+
+  int num_sos = Int_val( v_num_sos );
+  int num_members = Int_val( v_num_members );
+  int* types = get_i32a( v_types, num_sos );
+  int* beg = get_i32a( v_beg, num_sos );
+  int* ind = get_i32a( v_ind, num_members );
+  double* weight = get_fa( v_weight, num_members );
+
+  int error = GRBaddsos(model, num_sos, num_members, types, beg, ind, weight);
+  CAMLreturn( Val_int( error ) );
+
+}
+
+CAMLprim value gu_add_sos_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 7 );
+  return gu_add_sos(
+		    v_args[0],
+		    v_args[1],
+		    v_args[2],
+		    v_args[3],
+		    v_args[4],
+		    v_args[5],
+		    v_args[6]
+		    );
+}
+
+CAMLprim value gu_add_gen_constr_min(
+ value v_model,
+ value v_name_opt,
+ value v_res_var,
+ value v_n_vars,
+ value v_vars,
+ value v_constant
+)
+{
+  CAMLparam5( v_model, v_name_opt, v_res_var, v_n_vars, v_vars );
+  CAMLxparam1( v_constant );
+  CAMLlocal1( v_name );
+
+  GRBmodel* model = model_val( v_model );
+  const char* name = NULL;
+  if (Is_some( v_name_opt )) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+  int res_var = Int_val( v_res_var );
+  int n_vars = Int_val( v_n_vars );
+  int* vars = get_i32a( v_vars, n_vars );
+  double constant = Double_val(v_constant);
+
+  int error = GRBaddgenconstrMin( model, name, res_var, n_vars, vars, constant );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_gen_constr_min_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 6 );
+  return gu_add_gen_constr_min(
+			       v_args[0],
+			       v_args[1],
+			       v_args[2],
+			       v_args[3],
+			       v_args[4],
+			       v_args[5]
+			       );
+}
+
+CAMLprim value gu_add_gen_constr_max(
+ value v_model,
+ value v_name_opt,
+ value v_res_var,
+ value v_n_vars,
+ value v_vars,
+ value v_constant
+)
+{
+  CAMLparam5( v_model, v_name_opt, v_res_var, v_n_vars, v_vars );
+  CAMLxparam1( v_constant );
+  CAMLlocal1( v_name );
+
+  GRBmodel* model = model_val( v_model );
+  const char* name = NULL;
+  if (Is_some( v_name_opt )) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+  int res_var = Int_val( v_res_var );
+  int n_vars = Int_val( v_n_vars );
+  int* vars = get_i32a( v_vars, n_vars );
+  double constant = Double_val(v_constant);
+
+  int error = GRBaddgenconstrMax( model, name, res_var, n_vars, vars, constant );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_gen_constr_max_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 6 );
+  return gu_add_gen_constr_max(
+			       v_args[0],
+			       v_args[1],
+			       v_args[2],
+			       v_args[3],
+			       v_args[4],
+			       v_args[5]
+			       );
+}
+
+CAMLprim value gu_add_gen_constr_and(
+ value v_model,
+ value v_name_opt,
+ value v_res_var,
+ value v_n_vars,
+ value v_vars
+)
+{
+  CAMLparam5( v_model, v_name_opt, v_res_var, v_n_vars, v_vars );
+  CAMLlocal1( v_name );
+
+  GRBmodel* model = model_val( v_model );
+  const char* name = NULL;
+  if (Is_some( v_name_opt )) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+  int res_var = Int_val( v_res_var );
+  int n_vars = Int_val( v_n_vars );
+  int* vars = get_i32a( v_vars, n_vars );
+
+  int error = GRBaddgenconstrAnd( model, name, res_var, n_vars, vars );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_gen_constr_or(
+ value v_model,
+ value v_name_opt,
+ value v_res_var,
+ value v_n_vars,
+ value v_vars
+)
+{
+  CAMLparam5( v_model, v_name_opt, v_res_var, v_n_vars, v_vars );
+  CAMLlocal1( v_name );
+
+  GRBmodel* model = model_val( v_model );
+  const char* name = NULL;
+  if (Is_some( v_name_opt )) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+  int res_var = Int_val( v_res_var );
+  int n_vars = Int_val( v_n_vars );
+  int* vars = get_i32a( v_vars, n_vars );
+
+  int error = GRBaddgenconstrOr( model, name, res_var, n_vars, vars );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_gen_constr_indicator(
+ value v_model,
+ value v_name_opt,
+ value v_bin_var,
+ value v_bin_val,
+ value v_n_vars,
+ value v_ind_opt,
+ value v_val_opt,
+ value v_sense,
+ value v_rhs
+)
+{
+  CAMLparam5( v_model, v_name_opt, v_bin_var, v_bin_val, v_n_vars );
+  CAMLxparam4( v_ind_opt, v_val_opt, v_sense, v_rhs );
+  CAMLlocal3( v_name, v_ind, v_val );
+
+  GRBmodel* model = model_val( v_model );
+  const char* name = NULL;
+  if (Is_some( v_name_opt )) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+  int bin_var = Int_val( v_bin_var );
+  int bin_val = Int_val( v_bin_val );
+  int n_vars = Int_val( v_n_vars );
+  const int* ind = NULL;
+  if (Is_some( v_ind_opt )) {
+    v_ind = Some_val( v_ind_opt );
+    ind = get_i32a( v_ind, n_vars );
+  }
+  const double* val = NULL;
+  if (Is_some( v_val_opt )) {
+    v_val = Some_val( v_val_opt );
+    val = get_fa( v_val, n_vars );
+  }
+  char sense = Int_val( v_sense );
+  double rhs = Double_val( v_rhs );
+
+  int error = GRBaddgenconstrIndicator( model, name, bin_var, bin_val, n_vars, ind, val, sense, rhs );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_gen_constr_indicator_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 9 );
+  return gu_add_gen_constr_indicator(
+				     v_args[0],
+				     v_args[1],
+				     v_args[2],
+				     v_args[3],
+				     v_args[4],
+				     v_args[5],
+				     v_args[6],
+				     v_args[7],
+				     v_args[8]
+				     );
+}
+
+CAMLprim value gu_add_gen_constr_pwl(
+ value v_model,
+ value v_name_opt,
+ value v_x_var,
+ value v_y_var,
+ value v_n_pts,
+ value v_x_pts,
+ value v_y_pts
+)
+{
+  CAMLparam5( v_model, v_name_opt, v_x_var, v_y_var, v_n_pts );
+  CAMLxparam2( v_x_pts, v_y_pts );
+  CAMLlocal1( v_name );
+
+  GRBmodel* model = model_val( v_model );
+  const char* name = NULL;
+  if (Is_some( v_name_opt )) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+  int x_var = Int_val( v_x_var );
+  int y_var = Int_val( v_y_var );
+  int n_pts = Int_val( v_n_pts );
+  double* x_pts = get_fa(v_x_pts, n_pts);
+  double* y_pts = get_fa(v_y_pts, n_pts);
+
+  int error = GRBaddgenconstrPWL( model, name, x_var, y_var, n_pts, x_pts, y_pts );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_gen_constr_pwl_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 7 );
+  return gu_add_gen_constr_pwl(
+			       v_args[0],
+			       v_args[1],
+			       v_args[2],
+			       v_args[3],
+			       v_args[4],
+			       v_args[5],
+			       v_args[6]
+			       );
+}
+
+
+CAMLprim value gu_add_gen_constr_exp(
+ value v_model,
+ value v_name_opt,
+ value v_x_var,
+ value v_y_var,
+ value v_options_opt
+)
+{
+  CAMLparam5( v_model, v_name_opt, v_x_var, v_y_var, v_options_opt );
+  CAMLlocal2( v_name, v_options );
+
+  GRBmodel* model = model_val( v_model );
+  const char* name = NULL;
+  if (Is_some( v_name_opt )) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+  int x_var = Int_val( v_x_var );
+  int y_var = Int_val( v_y_var );
+  const char* options = NULL;
+  if (Is_some( v_options_opt )) {
+    v_options = Some_val( v_options_opt );
+    options = String_val( v_options );
+  }
+
+  int error = GRBaddgenconstrExp( model, name, x_var, y_var, options );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_gen_constr_pow(
+ value v_model,
+ value v_name_opt,
+ value v_x_var,
+ value v_y_var,
+ value v_a,
+ value v_options_opt
+)
+{
+  CAMLparam5( v_model, v_name_opt, v_x_var, v_y_var, v_a );
+  CAMLxparam1( v_options_opt );
+  CAMLlocal2( v_name, v_options );
+
+  GRBmodel* model = model_val( v_model );
+  const char* name = NULL;
+  if (Is_some( v_name_opt )) {
+    v_name = Some_val( v_name_opt );
+    name = String_val( v_name );
+  }
+  int x_var = Int_val( v_x_var );
+  int y_var = Int_val( v_y_var );
+  double a = Double_val( v_a );
+  const char* options = NULL;
+  if (Is_some( v_options_opt )) {
+    v_options = Some_val( v_options_opt );
+    options = String_val( v_options );
+  }
+
+  int error = GRBaddgenconstrPow( model, name, x_var, y_var, a, options );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_gen_constr_pow_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 6 );
+  return gu_add_gen_constr_pow(
+			       v_args[0],
+			       v_args[1],
+			       v_args[2],
+			       v_args[3],
+			       v_args[4],
+			       v_args[5]
+			       );
+}
+
+CAMLprim value gu_del_gen_constrs(
+ value v_model,
+ value v_num_del,
+ value v_ind
+)
+{
+  CAMLparam3( v_model, v_num_del, v_ind);
+
+  GRBmodel* model = model_val( v_model );
+  int num_del = Int_val( v_num_del );
+  int* ind = get_i32a( v_ind, num_del );
+
+  int error = GRBdelgenconstrs(model, num_del, ind);
+  CAMLreturn( Val_int( error ) );
+}
+
+
+
+CAMLprim value gu_feas_relax(
+  value v_model, 
+  value v_relax_obj_type,
+  value v_min_relax,
+  value v_lb_pen_opt,
+  value v_ub_pen_opt,
+  value v_rhs_pen_opt,
+  value v_feas_obf_p_opt
+)
+{
+  CAMLparam5( v_model, v_relax_obj_type, v_min_relax, v_lb_pen_opt, v_ub_pen_opt );
+  CAMLxparam2( v_rhs_pen_opt, v_feas_obf_p_opt );
+  CAMLlocal4( v_lb_pen, v_ub_pen, v_rhs_pen, v_feas_obf_p );
+  GRBmodel* model = model_val(v_model);
+  int relax_obj_type = Int_val(v_relax_obj_type);
+  int min_relax = Int_val(v_min_relax);
+
+  double* lb_pen = NULL;
+  if ( Is_some( v_lb_pen_opt ) ) {
+    v_lb_pen = Some_val( v_lb_pen_opt );
+    lb_pen = get_fa( v_lb_pen, min_relax );
+  }
+
+  double* ub_pen = NULL;
+  if ( Is_some( v_ub_pen_opt ) ) {
+    v_ub_pen = Some_val( v_ub_pen_opt );
+    ub_pen = get_fa( v_ub_pen, min_relax );
+  }
+
+  double* rhs_pen = NULL;
+  if ( Is_some( v_rhs_pen_opt ) ) {
+    v_rhs_pen = Some_val( v_rhs_pen_opt );
+    rhs_pen = get_fa( v_rhs_pen, min_relax );
+  }
+
+  double* feas_obf_p = NULL;
+  if ( Is_some( v_feas_obf_p_opt ) ) {
+    v_feas_obf_p = Some_val( v_feas_obf_p_opt );
+    feas_obf_p = get_fa( v_feas_obf_p, min_relax );
+  }
+
+  int error = GRBfeasrelax( model,
+    relax_obj_type,
+    min_relax, lb_pen,
+    ub_pen,
+    rhs_pen,
+    feas_obf_p 
+  );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_feas_relax_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 7 );
+  return gu_feas_relax(
+		       v_args[0],
+		       v_args[1],
+		       v_args[2],
+		       v_args[3],
+		       v_args[4],
+		       v_args[5],
+		       v_args[6]
+      );
+}
+
+CAMLprim value gu_add_var(
+ value v_model,
+ value v_num_nz,
+ value v_v_ind_opt,
+ value v_v_val_opt,
+ value v_obj,
+ value v_lb,
+ value v_ub,
+ value v_v_type,
+ value v_var_name_opt
+)
+{
+  CAMLparam5( v_model, v_num_nz, v_v_ind_opt, v_v_val_opt, v_obj );
+  CAMLxparam4( v_lb, v_ub, v_v_type, v_var_name_opt );
+  CAMLlocal3( v_v_ind, v_v_val, v_var_name );
+
+
+  GRBmodel* model = model_val( v_model );
+  int num_nz = Int_val( v_num_nz );
+
+  int* v_ind = NULL;
+  if ( Is_some( v_v_ind_opt ) ) {
+    v_v_ind = Some_val( v_v_ind_opt );
+    v_ind = get_i32a( v_v_ind, num_nz );
+  }
+
+  double* v_val = NULL;
+  if ( Is_some( v_v_val_opt ) ) {
+    v_v_val = Some_val( v_v_val_opt );
+    v_val = get_fa( v_v_val, num_nz );
+  }
+
+  double obj = Double_val(v_obj);
+  double lb = Double_val(v_lb);
+  double ub = Double_val(v_ub);
+  char v_type = Int_val(v_v_type);
+
+  const char* var_name = NULL;
+  if ( Is_some( v_var_name_opt ) ) {
+    v_var_name = Some_val( v_var_name_opt );
+    var_name = String_val( v_var_name );
+  }
+
+  int error = GRBaddvar( model,
+			  num_nz,
+			  v_ind,
+			  v_val,
+			  obj,
+			  lb,
+			  ub,
+			  v_type,
+        var_name);
+
+  CAMLreturn( Val_int( error ) );
+
+}
+
+CAMLprim value gu_add_var_bc(value* v_args, int arg_n )
+{
+  assert( arg_n == 9 );
+  return gu_add_var(
+		    v_args[0],
+		    v_args[1],
+		    v_args[2],
+		    v_args[3],
+		    v_args[4],
+		    v_args[5],
+		    v_args[6],
+		    v_args[7],
+		    v_args[8]
+        );
 }
 
 CAMLprim value gu_add_vars(
@@ -1246,18 +1859,77 @@ CAMLprim value gu_add_vars(
 
 }
 
+CAMLprim value gu_chg_coeffs(
+ value v_model,
+ value v_num_chgs,
+ value v_c_ind,
+ value v_v_ind,
+ value v_val
+)
+{
+  CAMLparam5( v_model, v_num_chgs, v_c_ind, v_v_ind, v_val );
+
+  GRBmodel* model = model_val( v_model );
+  int num_chgs = Int_val( v_num_chgs );
+  int* c_ind = get_i32a( v_c_ind, num_chgs );
+  if ( c_ind == NULL ) {
+    caml_invalid_argument( "chg_coeffs:cind" );
+  }
+  int* v_ind = get_i32a( v_v_ind, num_chgs );
+  if ( v_ind == NULL ) {
+    caml_invalid_argument( "chg_coeffs:vind" );
+  }
+  double* val = get_fa( v_val, num_chgs );
+  if ( val == NULL ) {
+    caml_invalid_argument( "chg_coeffs:val" );
+  }
+
+  int error = GRBchgcoeffs( model, num_chgs, c_ind, v_ind, val );
+  CAMLreturn( Val_int( error ) );
+}
+
+CAMLprim value gu_add_q_p_terms(
+ value v_model,
+ value v_num_qnz,
+ value v_q_row,
+ value v_q_col,
+ value v_q_val
+)
+{
+  CAMLparam5( v_model, v_num_qnz, v_q_row, v_q_col, v_q_val );
+
+  GRBmodel* model = model_val( v_model );
+  int num_qnz = Int_val( v_num_qnz );
+  int* q_row = get_i32a( v_q_row, num_qnz );
+  if ( q_row == NULL ) {
+    caml_invalid_argument( "add_q_p_terms:qrow" );
+  }
+  int* q_col = get_i32a( v_q_col, num_qnz );
+  if ( q_col == NULL ) {
+    caml_invalid_argument( "add_q_p_terms:qcol" );
+  }
+  double* q_val = get_fa( v_q_val, num_qnz );
+  if ( q_val == NULL ) {
+    caml_invalid_argument( "add_q_p_terms:qval" );
+  }
+
+  int error = GRBaddqpterms( model, num_qnz, q_row, q_col, q_val );
+  CAMLreturn( Val_int( error ) );
+}
+
 CAMLprim value gu_add_vars_bc(value* v_args, int arg_n )
 {
   assert( arg_n == 8 );
-  return gu_add_vars( v_args[0],
-		      v_args[1],
-		      v_args[2],
-		      v_args[3],
-		      v_args[4],
-		      v_args[5],
-		      v_args[6],
-		      v_args[7]
-		      );
+  return gu_add_vars(
+		     v_args[0],
+		     v_args[1],
+		     v_args[2],
+		     v_args[3],
+		     v_args[4],
+		     v_args[5],
+		     v_args[6],
+		     v_args[7]
+        );
 }
 
 CAMLprim value gu_optimize( value v_model )
@@ -1346,17 +2018,37 @@ CAMLprim value gu_set_objective_n(
 CAMLprim value gu_set_objective_n_bc(value* v_args, int arg_n )
 {
   assert( arg_n == 11 );
-  return gu_set_objective_n( v_args[0],
-			     v_args[1],
-			     v_args[2],
-			     v_args[3],
-			     v_args[4],
-			     v_args[5],
-			     v_args[6],
-			     v_args[7],
-			     v_args[8],
-			     v_args[9],
-			     v_args[10]
+  return gu_set_objective_n( 
+			    v_args[0],
+			    v_args[1],
+			    v_args[2],
+			    v_args[3],
+			    v_args[4],
+			    v_args[5],
+			    v_args[6],
+			    v_args[7],
+			    v_args[8],
+			    v_args[9],
+			    v_args[10]
 			     );
 }
 
+CAMLprim value gu_set_pwl_obj(
+  value v_model,
+  value v_var,
+  value	v_n_points,
+  value v_x,
+  value	v_y
+)
+{
+  CAMLparam5( v_model, v_var, v_n_points, v_x, v_y );
+
+  GRBmodel* model = model_val( v_model );
+  int var = Int_val( v_var );
+  int n_points = Int_val( v_n_points );
+  double* x = get_fa( v_x, n_points );
+  double* y = get_fa( v_y, n_points );
+
+  int error = GRBsetpwlobj(model, var, n_points, x, y);
+  CAMLreturn( Val_int( error ) );
+}

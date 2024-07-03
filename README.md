@@ -56,3 +56,48 @@ these, [guroobi](https://github.com/onechronos/guroobi) is *not* based
 on [ocaml-ctypes](https://github.com/yallop/ocaml-ctypes). In the
 author's opinion, the verbosity emanating from this design decision is
 worth the extra flexibility.
+
+# Testing
+
+Testing for Guroobi is done via the 
+[Gurobi C Examples](https://www.gurobi.com/documentation/current/examples/c_examples.html).
+Tests can be run by
+```sh
+dune runtest
+```
+The following tests are replicated:
+
+- [ ] batchmode
+- [x] bilinear
+- [ ] callback
+- [x] dense
+- [x] diet
+- [x] facility
+- [x] feasopt
+- [x] fixanddive
+- [ ] gc_funcnonlinear
+- [ ] gc_pwl
+- [x] gc_pwl_func
+- [x] genconstr
+- [ ] lp
+- [ ] lpmethod
+- [ ] lpmod
+- [x] mip1
+- [ ] mip2
+- [x] multiobj
+- [x] multiscenario
+- [x] params
+- [x] piecewise
+- [x] poolsearch
+- [x] qcp
+- [x] qp
+- [ ] sensitivity
+- [x] sos
+- [x] sudoku
+- [ ] tsp
+- [ ] tune
+- [x] workforce1
+- [x] workforce2
+- [x] workforce3
+- [x] workforce4
+- [x] workforce5
