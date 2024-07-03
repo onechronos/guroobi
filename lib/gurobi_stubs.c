@@ -136,7 +136,8 @@ CAMLprim value gu_empty_env( value unit )
     env_val(v_env) = env;
 
     // Ok t
-    v_res = caml_alloc_some( v_env );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_env );
   }
   else {
     // Error code
@@ -188,7 +189,8 @@ CAMLprim value gu_get_int_param( value v_env, value v_name )
   int error = GRBgetintparam( env, name, &i );
   if ( error == 0 ) {
     // Ok i
-    v_res = caml_alloc_some( Val_int(i) );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, Val_int(i) );
   }
   else {
     // Error code
@@ -210,7 +212,8 @@ CAMLprim value gu_get_int_model_param( value v_model, value v_name )
   int error = GRBgetintparam( env, name, &i );
   if ( error == 0 ) {
     // Ok i
-    v_res = caml_alloc_some( Val_int(i) );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, Val_int(i) );
   }
   else {
     // Error code
@@ -255,7 +258,8 @@ CAMLprim value gu_get_str_param( value v_env, value v_name )
     v_s = caml_copy_string( s );
 
     // Ok s
-    v_res = caml_alloc_some( v_s );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_s );
   }
   else {
     // Error code
@@ -279,7 +283,8 @@ CAMLprim value gu_get_str_model_param( value v_model, value v_name )
     v_s = caml_copy_string( s );
 
     // Ok s
-    v_res = caml_alloc_some( v_s );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_s );
   }
   else {
     // Error code
@@ -323,7 +328,8 @@ CAMLprim value gu_get_float_param( value v_env, value v_name )
   if ( error == 0 ) {
     v_f = caml_copy_double(f);
     // Ok f
-    v_res = caml_alloc_some( v_f );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_f );
   }
   else {
     // Error code
@@ -346,7 +352,8 @@ CAMLprim value gu_get_float_model_param( value v_model, value v_name )
   if ( error == 0 ) {
     v_f = caml_copy_double(f);
     // Ok f
-    v_res = caml_alloc_some( v_f );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_f );
   }
   else {
     // Error code
@@ -395,7 +402,8 @@ CAMLprim value gu_get_float_attr_array( value v_model, value v_name, value v_sta
 
     if ( error == 0 ) {
       // Ok v_array
-      v_res = caml_alloc_some( v_array );
+      v_res = caml_alloc(1, 0);
+      Store_field( v_res, 0, v_array );
     }
     else {
       // Error code
@@ -445,7 +453,8 @@ CAMLprim value gu_get_int_attr_array( value v_model, value v_name, value v_start
 
     if ( error == 0 ) {
       // Ok v_array
-      v_res = caml_alloc_some( v_array );
+      v_res = caml_alloc(1, 0);
+      Store_field( v_res, 0, v_array );
     }
     else {
       // Error code
@@ -496,7 +505,8 @@ CAMLprim value gu_get_char_attr_array( value v_model, value v_name, value v_star
 
     if ( error == 0 ) {
       // Ok v_array
-      v_res = caml_alloc_some( v_array );
+      v_res = caml_alloc(1, 0);
+      Store_field( v_res, 0, v_array );
     }
     else {
       // Error code
@@ -525,7 +535,8 @@ CAMLprim value gu_get_str_attr_array( value v_model, value v_name, value v_start
     for (int i = 0; i < len; i++ ) {
       Store_field( v_array, i, caml_alloc_initialized_string( strlen(array[i]), array[i] ) );
     }
-    v_res = caml_alloc_some( v_array );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_array );
   }
   else {
     // Error code
@@ -637,7 +648,8 @@ CAMLprim value gu_new_model(
     model_val(v_model) = model;
 
     // Ok model
-    v_res = caml_alloc_some( v_model );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_model );
   }
   else {
     // Error code
@@ -683,7 +695,8 @@ CAMLprim value gu_read_model( value v_env, value v_path )
       model_val(v_model) = model;
 
       // Ok model
-      v_res = caml_alloc_some( v_model );
+      v_res = caml_alloc(1, 0);
+      Store_field( v_res, 0, v_model );
     }
     else {
       // Error code
@@ -756,8 +769,9 @@ CAMLprim value gu_get_float_attr_element(value v_model, value v_name, value v_el
   double d;
   int error = GRBgetdblattrelement( model, name, element, &d );
   if ( error == 0 ) {
-    // Ok sv_res = caml_alloc_some( caml_copy_double(d) );
-    v_res = caml_alloc_some( caml_copy_double(d) );
+    // Ok s
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, caml_copy_double(d) );
   }
   else {
     // Error code
@@ -790,7 +804,8 @@ CAMLprim value gu_get_str_attr_element(value v_model, value v_name, value v_elem
   int error = GRBgetstrattrelement( model, name, element, &s );
   if ( error == 0 ) {
     // Ok s
-    v_res = caml_alloc_some( caml_copy_string(s) );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, caml_copy_string(s) );
   }
   else {
     // Error code
@@ -823,7 +838,8 @@ CAMLprim value gu_get_char_attr_element(value v_model, value v_name, value v_ele
   int error = GRBgetcharattrelement( model, name, element, &c );
   if ( error == 0 ) {
     // Ok s
-    v_res = caml_alloc_some( Val_int(c) );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, Val_int(c) );
   }
   else {
     // Error code
@@ -856,7 +872,8 @@ CAMLprim value gu_get_int_attr_element(value v_model, value v_name, value v_elem
   int error = GRBgetintattrelement( model, name, element, &i );
   if ( error == 0 ) {
     // Ok s
-    v_res = caml_alloc_some( Val_int(i) );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, Val_int(i) );
   }
   else {
     // Error code
@@ -887,7 +904,8 @@ CAMLprim value gu_get_float_attr( value v_model, value v_name )
   int error = GRBgetdblattr( model, name, &d );
   if ( error == 0 ) {
     // Ok s
-    v_res = caml_alloc_some( caml_copy_double(d) );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, caml_copy_double(d) );
   }
   else {
     // Error code
@@ -920,7 +938,8 @@ CAMLprim value gu_get_str_attr( value v_model, value v_name )
     v_s = caml_copy_string( s );
 
     // Ok s
-    v_res = caml_alloc_some( v_s );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, v_s );
   }
   else {
     // Error code
@@ -951,7 +970,8 @@ CAMLprim value gu_get_int_attr( value v_model, value v_name )
   int error = GRBgetintattr( model, name, &i );
   if ( error == 0 ) {
     // Ok s
-    v_res = caml_alloc_some( Val_int(i) );
+    v_res = caml_alloc(1, 0);
+    Store_field( v_res, 0, Val_int(i) );
   }
   else {
     // Error code
